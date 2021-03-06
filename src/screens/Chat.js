@@ -24,6 +24,9 @@ import {
   InputToolbar,
   MessageText,
 } from 'react-native-gifted-chat';
+import SoundPlayer from 'react-native-sound-player';
+import Sound from 'react-native-sound';
+import TrackPlayer from 'react-native-track-player';
 
 export default function Chat({navigation, route}) {
   var chatItem = route.params.chatItem;
@@ -38,7 +41,7 @@ export default function Chat({navigation, route}) {
   useEffect(() => {
     getUserPic();
     getNews();
-    checkTopicSelected()
+    checkTopicSelected();
 
     const messagesListener = firestore()
       .collection('Chats')
@@ -73,25 +76,46 @@ export default function Chat({navigation, route}) {
 
   const getNews = async () => {
     setToday([]);
-    await firestore().collection('Topics').where('Date', '==', new Date().toDateString()).get().then((resDocs) => {
-      resDocs.forEach((doc) => {
-        setToday((prev) => [...prev, {image: doc.get('PhotoURL'), title: doc.get('Title'), url: doc.get('URL'), ID: doc.id}])
-      })
-    });
+    await firestore()
+      .collection('Topics')
+      .where('Date', '==', new Date().toDateString())
+      .get()
+      .then((resDocs) => {
+        resDocs.forEach((doc) => {
+          setToday((prev) => [
+            ...prev,
+            {
+              image: doc.get('PhotoURL'),
+              title: doc.get('Title'),
+              url: doc.get('URL'),
+              ID: doc.id,
+            },
+          ]);
+        });
+      });
   };
 
   const checkTopicSelected = async () => {
-    await firestore().collection('TOTD').where('Date', '==', new Date().toDateString()).where('GroupID', '==', chatItem.ID).get().then((resDocs) => {
-      if (!resDocs.empty) {
-        let tID = resDocs.docs[0].get('TopicID')
-        firestore().collection('Topics').doc(tID).get().then((doc) => {
-          if (doc.exists) {
-            setTopic(doc.data())
-          }
-        })
-      }
-    });
-  }
+    await firestore()
+      .collection('TOTD')
+      .where('Date', '==', new Date().toDateString())
+      .where('GroupID', '==', chatItem.ID)
+      .get()
+      .then((resDocs) => {
+        if (!resDocs.empty) {
+          let tID = resDocs.docs[0].get('TopicID');
+          firestore()
+            .collection('Topics')
+            .doc(tID)
+            .get()
+            .then((doc) => {
+              if (doc.exists) {
+                setTopic(doc.data());
+              }
+            });
+        }
+      });
+  };
 
   function handleSend(newMessage = []) {
     setMessages(GiftedChat.append(messages, newMessage));
@@ -153,9 +177,9 @@ export default function Chat({navigation, route}) {
     return (
       <View>
         <TouchableOpacity
-        onPress={() => {
-          Linking.openURL(topic.URL);
-        }}
+          onPress={() => {
+            Linking.openURL(topic.URL);
+          }}
           style={{
             width: '90%',
             height: 100,
@@ -185,22 +209,51 @@ export default function Chat({navigation, route}) {
               borderTopRightRadius: 20,
               borderBottomRightRadius: 20,
             }}>
-              <Image source={{uri: topic.PhotoURL}} style={{width: '100%', height: '100%', borderTopRightRadius: 20, borderBottomRightRadius: 20}}/>
-            </View>
+            <Image
+              source={{uri: topic.PhotoURL}}
+              style={{
+                width: '100%',
+                height: '100%',
+                borderTopRightRadius: 20,
+                borderBottomRightRadius: 20,
+              }}
+            />
+          </View>
         </TouchableOpacity>
         <FlatList
           data={recorded}
           horizontal={true}
           style={{marginHorizontal: '5%', marginTop: 10}}
           renderItem={({item}) => (
-            <View
+            <TouchableOpacity
+              onPress={() => {
+                storage().ref('Recording').child('Avicii_Hey_Brother_Original_Mix_PN.mp3').getDownloadURL().then((res) => {
+                  console.log(res)
+                  const start = async () =>  {
+                    await TrackPlayer.setupPlayer();
+  
+                    await TrackPlayer.add({
+                      id: '1',
+                      url: res,
+                      title: 'Harin',
+                      artist: 'Also Harin',
+                    })
+  
+                    await TrackPlayer.play();
+                  }
+  
+                  start();
+                });
+
+                
+              }}
               style={{
                 width: 70,
                 height: 70,
                 borderRadius: 70,
                 backgroundColor: 'green',
                 marginRight: 5,
-              }}></View>
+              }}></TouchableOpacity>
           )}
         />
       </View>
