@@ -9,6 +9,7 @@ import SignUp from './src/screens/SignUp';
 import Login from './src/screens/Login';
 import Home from './src/screens/Home';
 import Profile from './src/screens/Profile';
+import Chat from './src/screens/Chat';
 
 enableScreens();
 const LoginStack = createNativeStackNavigator();
@@ -61,6 +62,7 @@ export default function App() {
         }}>
         <AppNav.Screen name="Home" component={Home} />
         <AppNav.Screen name="Profile" component={Profile} />
+        <AppNav.Screen name="Chat" component={Chat} />
       </AppNav.Navigator>
     </NavigationContainer>
   );

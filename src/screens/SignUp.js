@@ -75,6 +75,10 @@ export default function SignUp({navigation}) {
           await auth()
             .createUserWithEmailAndPassword(newEmail, newPassword)
             .then((result) => {
+              result.user.updateProfile({
+                displayName: usernameLower,
+              });
+              
               firestore().collection('Users').doc(result.user.uid).set({
                 UID: result.user.uid,
                 Username: usernameLower,
@@ -83,10 +87,6 @@ export default function SignUp({navigation}) {
                   'gs://sfhacks2021.appspot.com/ProfilePicture/DefaultProfPic.png',
                 Following: 0,
                 Followers: 0,
-              });
-
-              result.user.updateProfile({
-                displayName: usernameLower,
               });
             });
         } else {

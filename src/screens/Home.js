@@ -21,10 +21,15 @@ import moment from 'moment';
 export default function Home({navigation}) {
   const [profPic, setProfPic] = useState();
   const [sport, setSport] = useState({image: null, headline: '', url: ''});
-  const [entertainment, setEntertainment] = useState({image: null, headline: '', url: ''});
+  const [entertainment, setEntertainment] = useState({
+    image: null,
+    headline: '',
+    url: '',
+  });
   const [science, setScience] = useState({image: null, headline: '', url: ''});
   const [news, setNews] = useState({image: null, headline: '', url: ''});
   const [chat, setChat] = useState([]);
+  const [addWindow, setAddWindow] = useState(false);
 
   const firstOpacity = useRef(new Animated.Value(1)).current;
   const secondOpacity = useRef(new Animated.Value(0)).current;
@@ -112,7 +117,7 @@ export default function Home({navigation}) {
 
   useEffect(() => {
     getProfilePic();
-    getHeadline();
+    // getHeadline();
     getChat();
   }, []);
 
@@ -151,11 +156,13 @@ export default function Home({navigation}) {
 
         const headline = article.title;
         const url = article.url;
-        setSport({
-          image,
-          title: headline,
-          url,
-        });
+        firestore().collection('Topics').add({
+            Date: firestore.FieldValue.serverTimestamp(),
+            PhotoURL: image,
+            Title: headline,
+            URL: url,
+            Type: 'Sports'
+        })
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
@@ -174,11 +181,13 @@ export default function Home({navigation}) {
         const image = article.urlToImage;
         const headline = article.title;
         const url = article.url;
-        setEntertainment({
-          image,
-          title: headline,
-          url,
-        });
+        firestore().collection('Topics').add({
+            Date: firestore.FieldValue.serverTimestamp(),
+            PhotoURL: image,
+            Title: headline,
+            URL: url,
+            Type: 'Entertainment'
+        })
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
@@ -197,11 +206,13 @@ export default function Home({navigation}) {
         const image = article.urlToImage;
         const headline = article.title;
         const url = article.url;
-        setNews({
-          image,
-          title: headline,
-          url,
-        });
+        firestore().collection('Topics').add({
+            Date: firestore.FieldValue.serverTimestamp(),
+            PhotoURL: image,
+            Title: headline,
+            URL: url,
+            Type: 'Business'
+        })
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
@@ -216,16 +227,19 @@ export default function Home({navigation}) {
       .then((response) => response.text())
       .then((result) => {
         const res = JSON.parse(result);
+        console.log(res);
         const article = res.articles.find((item) => item.urlToImage !== null);
         const image = article.urlToImage;
         const headline = article.title;
         const url = article.url;
-        setScience({
-          image,
-          title: headline,
-          url,
-        });
-        // console.log(res);
+        firestore().collection('Topics').add({
+            Date: firestore.FieldValue.serverTimestamp(),
+            PhotoURL: image,
+            Title: headline,
+            URL: url,
+            Type: 'Science'
+        })
+        
       })
       .catch((error) => console.log('error', error));
   };
@@ -262,7 +276,12 @@ export default function Home({navigation}) {
   };
 
   const renderChat = useCallback(({item}) => (
-    <View
+    <TouchableOpacity
+      onPress={() => {
+        navigation.push('Chat', {
+          chatItem: item,
+        });
+      }}
       style={{
         marginVertical: 10,
         height: 50,
@@ -288,7 +307,7 @@ export default function Home({navigation}) {
         }}>
         {moment(item.LastActive.toDate(), 'YYYYMMDD').fromNow()}
       </Text>
-    </View>
+    </TouchableOpacity>
   ));
 
   return (
@@ -353,60 +372,33 @@ export default function Home({navigation}) {
               style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
               resizeMode="cover"
               borderRadius={20}>
-                <ImageBackground
-              source={require('../assets/BlackFade.png')}
-              style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
-              resizeMode="cover"
-              borderRadius={20}>
+              <ImageBackground
+                source={require('../assets/BlackFade.png')}
+                style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
+                resizeMode="cover"
+                borderRadius={20}>
                 <View style={{borderRadius: 20}}>
-              <Text
-                style={{
-                  color: color.white,
-                  fontFamily: 'Montserrat-Bold',
-                  fontSize: 20, margin: 20
-                }}>
-                {item.title}
-              </Text>
-              </View>
+                  <Text
+                    style={{
+                      color: color.white,
+                      fontFamily: 'Montserrat-Bold',
+                      fontSize: 20,
+                      margin: 20,
+                    }}>
+                    {item.title}
+                  </Text>
+                </View>
               </ImageBackground>
             </ImageBackground>
           </TouchableOpacity>
         )}
-        keyExtractor={(i) => i}
+        keyExtractor={(i) => i.title}
         contentContainerStyle={{
           height: '60%',
           marginHorizontal: '8%',
           marginTop: 10,
         }}
       />
-      {/* <View
-          style={{
-            height: '50%',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 5,
-          }}>
-          <TouchableOpacity style={styles.imageCard}>
-            <Image source={{uri: sportPic}} style={styles.imageStyle} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.imageCard}>
-            <Image source={{uri: sciencePic}} style={styles.imageStyle} />
-          </TouchableOpacity>
-        </View>
-
-        <View
-          style={{
-            height: '50%',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-          }}>
-          <TouchableOpacity style={styles.imageCard}>
-            <Image source={{uri: entertainmentPic}} style={styles.imageStyle} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.imageCard}>
-            <Image source={{uri: newsPic}} style={styles.imageStyle} />
-          </TouchableOpacity>
-        </View> */}
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
@@ -481,6 +473,20 @@ export default function Home({navigation}) {
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
+          <TouchableOpacity
+            style={{position: 'absolute', bottom: 50, right: '8%'}}
+            onPress={() => {
+              setAddWindow(true);
+            }}>
+            <Image
+              source={require('../assets/Plus.png')}
+              style={{
+                width: 50,
+                height: 50,
+                resizeMode: 'contain',
+              }}
+            />
+          </TouchableOpacity>
           <BottomSheetFlatList
             data={[...new Set(chat)]}
             scrollEnabled={true}
