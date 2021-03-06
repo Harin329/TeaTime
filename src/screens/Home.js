@@ -8,22 +8,27 @@ import {
   Image,
   SafeAreaView,
   TouchableOpacity,
-  Platform,
-  Dimensions,
-  PermissionsAndroid,
   StyleSheet,
-  Button,
+  FlatList,
+  Animated,
+  ImageBackground,
 } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
+import BottomSheet, {BottomSheetFlatList} from '@gorhom/bottom-sheet';
 import color from '../styles/color';
-import {set} from 'react-native-reanimated';
+import {NEWSAPI} from '@env';
+import moment from 'moment';
 
 export default function Home({navigation}) {
   const [profPic, setProfPic] = useState();
-  const [sportPic, setSportPic] = useState();
-  const [entertainmentPic, setEntertainmentPic] = useState();
-  const [sciencePic, setSciencePic] = useState();
-  const [newsPic, setNewsPic] = useState();
+  const [sport, setSport] = useState({image: null, headline: '', url: ''});
+  const [entertainment, setEntertainment] = useState({image: null, headline: '', url: ''});
+  const [science, setScience] = useState({image: null, headline: '', url: ''});
+  const [news, setNews] = useState({image: null, headline: '', url: ''});
+  const [chat, setChat] = useState([]);
+
+  const firstOpacity = useRef(new Animated.Value(1)).current;
+  const secondOpacity = useRef(new Animated.Value(0)).current;
+  const heightAnimation = useRef(new Animated.Value(50)).current;
 
   const styles = StyleSheet.create({
     safeView: {flex: 1, backgroundColor: color.white},
@@ -41,9 +46,10 @@ export default function Home({navigation}) {
       backgroundColor: color.lightBlue,
     },
     imageCard: {
-      width: '49%',
+      width: 300,
       height: '100%',
       borderRadius: 20,
+      marginRight: 10,
       backgroundColor: color.lightBlue,
     },
     imageStyle: {
@@ -56,13 +62,58 @@ export default function Home({navigation}) {
 
   const bottomSheetRef = useRef(null);
   const snapPoints = useMemo(() => ['30%', '100%'], []);
-  const handleSheetChange = useCallback((index) => {
-    console.log(index);
+  const onSheetChange = useCallback((index, toIndex) => {
+    if (toIndex === 1) {
+      swap();
+    } else {
+      swapBack();
+    }
   }, []);
+
+  function swapBack() {
+    Animated.parallel([
+      Animated.timing(firstOpacity, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+      Animated.timing(secondOpacity, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+      Animated.timing(heightAnimation, {
+        toValue: 50,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }
+
+  function swap() {
+    Animated.parallel([
+      Animated.timing(firstOpacity, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+      Animated.timing(secondOpacity, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+      Animated.timing(heightAnimation, {
+        toValue: 100,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }
 
   useEffect(() => {
     getProfilePic();
     getHeadline();
+    getChat();
   }, []);
 
   const getProfilePic = async () => {
@@ -85,69 +136,173 @@ export default function Home({navigation}) {
       redirect: 'follow',
     };
 
-    await fetch(
-      'https://www.reddit.com/r/sports/top.json?limit=1',
-      requestOptions,
-    )
+    var url =
+      'https://newsapi.org/v2/top-headlines?' +
+      'country=us&' +
+      'category=sports&' +
+      'apiKey=' +
+      NEWSAPI;
+    await fetch(url, requestOptions)
       .then((response) => response.text())
       .then((result) => {
         const res = JSON.parse(result);
-        const image = res.data.children[0].data.thumbnail;
-        setSportPic(image);
-        const headline = res.data.children[0].data.title;
-        const url = res.data.children[0].data.url;
+        const article = res.articles.find((item) => item.urlToImage !== null);
+        const image = article.urlToImage;
+
+        const headline = article.title;
+        const url = article.url;
+        setSport({
+          image,
+          title: headline,
+          url,
+        });
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
 
-    await fetch(
-      'https://www.reddit.com/r/entertainment/top.json?limit=1',
-      requestOptions,
-    )
+    var url =
+      'https://newsapi.org/v2/top-headlines?' +
+      'country=us&' +
+      'category=entertainment&' +
+      'apiKey=' +
+      NEWSAPI;
+    await fetch(url, requestOptions)
       .then((response) => response.text())
       .then((result) => {
         const res = JSON.parse(result);
-        const image = res.data.children[0].data.thumbnail;
-        setEntertainmentPic(image);
-        const headline = res.data.children[0].data.title;
-        const url = res.data.children[0].data.url;
+        const article = res.articles.find((item) => item.urlToImage !== null);
+        const image = article.urlToImage;
+        const headline = article.title;
+        const url = article.url;
+        setEntertainment({
+          image,
+          title: headline,
+          url,
+        });
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
 
-    await fetch(
-      'https://www.reddit.com/r/science/top.json?limit=1',
-      requestOptions,
-    )
+    var url =
+      'https://newsapi.org/v2/top-headlines?' +
+      'country=us&' +
+      'category=business&' +
+      'apiKey=' +
+      NEWSAPI;
+    await fetch(url, requestOptions)
       .then((response) => response.text())
       .then((result) => {
         const res = JSON.parse(result);
-        const image = res.data.children[0].data.thumbnail;
-        setSciencePic(image);
-        const headline = res.data.children[0].data.title;
-        const url = res.data.children[0].data.url;
+        const article = res.articles.find((item) => item.urlToImage !== null);
+        const image = article.urlToImage;
+        const headline = article.title;
+        const url = article.url;
+        setNews({
+          image,
+          title: headline,
+          url,
+        });
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
 
-    await fetch(
-      'https://www.reddit.com/r/news/top.json?limit=1',
-      requestOptions,
-    )
+    var url =
+      'https://newsapi.org/v2/top-headlines?' +
+      'country=us&' +
+      'category=science&' +
+      'apiKey=' +
+      NEWSAPI;
+    await fetch(url, requestOptions)
       .then((response) => response.text())
       .then((result) => {
         const res = JSON.parse(result);
-        const image = res.data.children[0].data.thumbnail;
-        setNewsPic(image);
-        const headline = res.data.children[0].data.title;
-        const url = res.data.children[0].data.url;
+        const article = res.articles.find((item) => item.urlToImage !== null);
+        const image = article.urlToImage;
+        const headline = article.title;
+        const url = article.url;
+        setScience({
+          image,
+          title: headline,
+          url,
+        });
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
   };
 
+  const getChat = async () => {
+    await firestore()
+      .collection('Chats')
+      .where('Users', 'array-contains', auth().currentUser.uid)
+      .orderBy('LastActive', 'desc')
+      .get()
+      .then((resDocs) => {
+        resDocs.forEach((doc) => {
+          (async () => {
+            try {
+              const url = await doc.get('Picture').getDownloadURL();
+              let data = doc.data();
+              data.url = url;
+              if (!chat.some((item) => item.ID === data.ID)) {
+                setChat((prev) => [...prev, data]);
+              }
+            } catch (err) {
+              const url = await storage()
+                .ref('DefaultProfPic.png')
+                .getDownloadURL();
+              let data = doc.data();
+              data.url = url;
+              if (!chat.some((item) => item.ID === data.ID)) {
+                setChat((prev) => [...prev, data]);
+              }
+            }
+          })();
+        });
+      });
+  };
+
+  const renderChat = useCallback(({item}) => (
+    <View
+      style={{
+        marginVertical: 10,
+        height: 50,
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}>
+      <Image source={{uri: profPic}} style={[styles.profile]} />
+      <Text
+        style={{
+          flex: 3,
+          marginLeft: 10,
+          fontFamily: 'Montserrat-Medium',
+          color: color.white,
+        }}>
+        {item.Name}
+      </Text>
+      <Text
+        style={{
+          flex: 1,
+          fontFamily: 'Montserrat-Medium',
+          color: color.lightBlue,
+          fontSize: 10,
+        }}>
+        {moment(item.LastActive.toDate(), 'YYYYMMDD').fromNow()}
+      </Text>
+    </View>
+  ));
+
   return (
     <SafeAreaView style={styles.safeView}>
+      <Image
+        source={require('../assets/BackgroundHome.png')}
+        style={{
+          width: '100%',
+          height: '120%',
+          position: 'absolute',
+          top: 0,
+          resizeMode: 'stretch',
+        }}
+      />
       <View style={styles.lowerView}>
         <View style={{flex: 4}}>
           <Text
@@ -161,7 +316,7 @@ export default function Home({navigation}) {
           </Text>
           <Text
             style={{
-              fontFamily: 'Montserrat',
+              fontFamily: 'Montserrat-Medium',
               color: color.black,
               fontSize: 20,
             }}>
@@ -188,20 +343,53 @@ export default function Home({navigation}) {
           <Image source={{uri: profPic}} style={styles.profile} />
         </TouchableOpacity>
       </View>
-      <View style={{height: '50%', marginHorizontal: '8%', marginTop: 10}}>
-        <View
+      <FlatList
+        data={[sport, entertainment, news, science]}
+        horizontal={true}
+        renderItem={({item}) => (
+          <TouchableOpacity style={styles.imageCard}>
+            <ImageBackground
+              source={{uri: item.image}}
+              style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
+              resizeMode="cover"
+              borderRadius={20}>
+                <ImageBackground
+              source={require('../assets/BlackFade.png')}
+              style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
+              resizeMode="cover"
+              borderRadius={20}>
+                <View style={{borderRadius: 20}}>
+              <Text
+                style={{
+                  color: color.white,
+                  fontFamily: 'Montserrat-Bold',
+                  fontSize: 20, margin: 20
+                }}>
+                {item.title}
+              </Text>
+              </View>
+              </ImageBackground>
+            </ImageBackground>
+          </TouchableOpacity>
+        )}
+        keyExtractor={(i) => i}
+        contentContainerStyle={{
+          height: '60%',
+          marginHorizontal: '8%',
+          marginTop: 10,
+        }}
+      />
+      {/* <View
           style={{
             height: '50%',
             flexDirection: 'row',
             justifyContent: 'space-between',
             marginBottom: 5,
           }}>
-          <TouchableOpacity
-            style={styles.imageCard}>
+          <TouchableOpacity style={styles.imageCard}>
             <Image source={{uri: sportPic}} style={styles.imageStyle} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.imageCard}>
+          <TouchableOpacity style={styles.imageCard}>
             <Image source={{uri: sciencePic}} style={styles.imageStyle} />
           </TouchableOpacity>
         </View>
@@ -212,33 +400,106 @@ export default function Home({navigation}) {
             flexDirection: 'row',
             justifyContent: 'space-between',
           }}>
-          <TouchableOpacity
-            style={styles.imageCard}>
+          <TouchableOpacity style={styles.imageCard}>
             <Image source={{uri: entertainmentPic}} style={styles.imageStyle} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.imageCard}>
+          <TouchableOpacity style={styles.imageCard}>
             <Image source={{uri: newsPic}} style={styles.imageStyle} />
           </TouchableOpacity>
-        </View>
-      </View>
+        </View> */}
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
         snapPoints={snapPoints}
-        onChange={handleSheetChange}
+        onAnimate={onSheetChange}
+        backgroundComponent={null}
         handleComponent={null}>
-        <View style={{flex: 1, backgroundColor: color.blue, borderRadius: 20}}>
-          <View style={{marginHorizontal: '8%', marginTop: '10%'}}>
-            <Text
+        <View style={{flex: 1, backgroundColor: color.blue, borderRadius: 30}}>
+          <Animated.View
+            style={{
+              marginHorizontal: '8%',
+              marginTop: '10%',
+              height: heightAnimation,
+            }}>
+            <Animated.Text
               style={{
                 color: color.white,
                 fontFamily: 'Montserrat-Bold',
                 fontSize: 18,
+                opacity: firstOpacity,
               }}>
               Your Chats
-            </Text>
-          </View>
+            </Animated.Text>
+            <Animated.View
+              style={{
+                opacity: secondOpacity,
+                flexDirection: 'row',
+                alignItems: 'center',
+              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  bottomSheetRef.current.collapse();
+                }}>
+                <Image
+                  source={require('../assets/Back.png')}
+                  style={{
+                    tintColor: color.white,
+                    width: 24,
+                    height: 24,
+                    resizeMode: 'contain',
+                    marginRight: 20,
+                    transform: [{rotate: '270deg'}],
+                  }}
+                />
+              </TouchableOpacity>
+              <Text
+                style={{
+                  color: color.white,
+                  fontFamily: 'Montserrat-Bold',
+                  fontSize: 18,
+                }}>
+                Your Chats
+              </Text>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  alignItems: 'flex-end',
+                  shadowColor: color.gray,
+                  shadowOffset: {
+                    width: 0,
+                    height: 4,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 5,
+                  backgroundColor: '#0000',
+                }}
+                onPress={() => {
+                  navigation.push('Profile');
+                }}>
+                <Image source={{uri: profPic}} style={styles.profile} />
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+          <BottomSheetFlatList
+            data={[...new Set(chat)]}
+            scrollEnabled={true}
+            showsVerticalScrollIndicator={false}
+            renderItem={renderChat}
+            contentContainerStyle={{marginBottom: 100}}
+            ItemSeparatorComponent={() => (
+              <View
+                style={{width: '100%', height: 1, backgroundColor: color.white}}
+              />
+            )}
+            ListFooterComponent={() => (
+              <View
+                style={{width: '100%', height: 1, backgroundColor: color.white}}
+              />
+            )}
+            style={{marginHorizontal: '8%'}}
+            keyExtractor={(i) => i.ID}
+          />
         </View>
       </BottomSheet>
     </SafeAreaView>
