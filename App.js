@@ -8,6 +8,7 @@ import auth from '@react-native-firebase/auth';
 import SignUp from './src/screens/SignUp';
 import Login from './src/screens/Login';
 import Home from './src/screens/Home';
+import Profile from './src/screens/Profile';
 
 enableScreens();
 const LoginStack = createNativeStackNavigator();
@@ -59,6 +60,7 @@ export default function App() {
           headerShown: false,
         }}>
         <AppNav.Screen name="Home" component={Home} />
+        <AppNav.Screen name="Profile" component={Profile} />
       </AppNav.Navigator>
     </NavigationContainer>
   );
