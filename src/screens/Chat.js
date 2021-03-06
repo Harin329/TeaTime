@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import storage from '@react-native-firebase/storage';
 import {
   Text,
   View,
@@ -10,13 +11,23 @@ import {
   StyleSheet,
   Button,
   ImageBackground,
+  FlatList,
+  TextInput,
+  Animated,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import color from '../styles/color';
-import {FlatList} from 'react-native-gesture-handler';
+import {
+  GiftedChat,
+  Send,
+  InputToolbar,
+  MessageText,
+} from 'react-native-gifted-chat';
 
 export default function Chat({navigation, route}) {
   var chatItem = route.params.chatItem;
+  const [profPic, setProfPic] = useState();
+
   const [selecting, setSelecting] = useState(false);
   const [recorded, setRecorded] = useState([1, 2, 3]);
   const [isDone, setIsDone] = useState(true);
@@ -28,6 +39,74 @@ export default function Chat({navigation, route}) {
   });
   const [science, setScience] = useState({image: null, headline: '', url: ''});
   const [news, setNews] = useState({image: null, headline: '', url: ''});
+
+  const firstOpacity = useRef(new Animated.Value(1)).current;
+  const [currMessage, setCurrMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    getUserPic();
+
+    const messagesListener = firestore()
+      .collection('Chats')
+      .doc(chatItem.ID)
+      .collection('Messages')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot((querySnapshot) => {
+        const m = querySnapshot.docs.map((doc) => {
+          const firebaseData = doc.data();
+
+          const data = {
+            _id: doc.id,
+            text: '',
+            createdAt: new Date().getTime(),
+            ...firebaseData,
+          };
+
+          data.user = {
+            ...firebaseData.user
+          }
+
+          return data;
+        });
+
+        setMessages(m);
+      });
+
+      return () => messagesListener();
+  }, []);
+
+  function handleSend(newMessage = []) {
+    setMessages(GiftedChat.append(messages, newMessage));
+
+    firestore()
+      .collection('Chats')
+      .doc(chatItem.ID)
+      .collection('Messages')
+      .add({
+        text: newMessage[0].text,
+        createdAt: new Date().getTime(),
+        user: {
+          _id: auth().currentUser.uid,
+          name: auth().currentUser.displayName,
+          avatar: profPic,
+        },
+      });
+  }
+
+  const getUserPic = async () => {
+    try {
+      const pic = storage()
+        .ref('ProfilePicture')
+        .child(`${auth().currentUser.uid}.jpg`);
+      const url = await pic.getDownloadURL();
+      setProfPic(url);
+    } catch (e) {
+      const pic = storage().ref('DefaultProfPic.png');
+      const url = await pic.getDownloadURL();
+      setProfPic(url);
+    }
+  };
 
   const styles = StyleSheet.create({
     safeView: {flex: 1, backgroundColor: color.blue},
@@ -183,16 +262,63 @@ export default function Chat({navigation, route}) {
             source={require('../assets/BackgroundChat.png')}
             style={{width: '100%', height: '90%'}}
             resizeMode={'contain'}>
-            <Text
-              style={{
-                color: color.blue,
-                fontFamily: 'Montserrat-Bold',
-                alignSelf: 'center',
-                marginTop: 20,
-                fontSize: 18,
-              }}>
-              Today
-            </Text>
+            <View style={{width: '100%', height: '70%', paddingTop: 20}}>
+              <GiftedChat
+                messages={messages}
+                onSend={(newMessage) => handleSend(newMessage)}
+                showUserAvatar={true}
+                alwaysShowSend={true}
+                renderMessageText={(props) => (
+                  <MessageText
+                    {...props}
+                    textStyle={{
+                      right: {fontFamily: 'Montserrat'},
+                      left: {fontFamily: 'Montserrat'},
+                    }}
+                  />
+                )}
+                textInputStyle={{
+                  fontFamily: 'Montserrat-Medium',
+                  paddingTop: 18,
+                }}
+                renderInputToolbar={(props) => (
+                  <InputToolbar
+                    {...props}
+                    containerStyle={{
+                      paddingTop: 10,
+                      height: 40,
+                      marginHorizontal: '8%',
+                      fontFamily: 'Montserrat',
+                      backgroundColor: color.white,
+                      borderRadius: 20,
+                    }}
+                    primaryStyle={{marginTop: -20}}
+                    placeholder="Chat..."
+                    placeholderTextColor={color.gray}
+                  />
+                )}
+                renderSend={(props) => (
+                  <Send
+                    {...props}
+                    containerStyle={{width: 50, alignItems: 'center'}}>
+                    <Image
+                      source={require('../assets/Send.png')}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        resizeMode: 'contain',
+                        marginBottom: 5,
+                      }}
+                    />
+                  </Send>
+                )}
+                user={{
+                  _id: auth().currentUser.uid,
+                  name: auth().currentUser.displayName,
+                  avatar: profPic,
+                }}
+              />
+            </View>
           </ImageBackground>
         </View>
       )}

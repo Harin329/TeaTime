@@ -17,6 +17,7 @@ import BottomSheet, {BottomSheetFlatList} from '@gorhom/bottom-sheet';
 import color from '../styles/color';
 import {NEWSAPI} from '@env';
 import moment from 'moment';
+import ActionButton from 'react-native-action-button';
 
 export default function Home({navigation}) {
   const [profPic, setProfPic] = useState();
@@ -157,12 +158,12 @@ export default function Home({navigation}) {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
-            PhotoURL: image,
-            Title: headline,
-            URL: url,
-            Type: 'Sports'
-        })
+          Date: firestore.FieldValue.serverTimestamp(),
+          PhotoURL: image,
+          Title: headline,
+          URL: url,
+          Type: 'Sports',
+        });
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
@@ -182,12 +183,12 @@ export default function Home({navigation}) {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
-            PhotoURL: image,
-            Title: headline,
-            URL: url,
-            Type: 'Entertainment'
-        })
+          Date: firestore.FieldValue.serverTimestamp(),
+          PhotoURL: image,
+          Title: headline,
+          URL: url,
+          Type: 'Entertainment',
+        });
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
@@ -207,12 +208,12 @@ export default function Home({navigation}) {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
-            PhotoURL: image,
-            Title: headline,
-            URL: url,
-            Type: 'Business'
-        })
+          Date: firestore.FieldValue.serverTimestamp(),
+          PhotoURL: image,
+          Title: headline,
+          URL: url,
+          Type: 'Business',
+        });
         // console.log(res);
       })
       .catch((error) => console.log('error', error));
@@ -233,13 +234,12 @@ export default function Home({navigation}) {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
-            PhotoURL: image,
-            Title: headline,
-            URL: url,
-            Type: 'Science'
-        })
-        
+          Date: firestore.FieldValue.serverTimestamp(),
+          PhotoURL: image,
+          Title: headline,
+          URL: url,
+          Type: 'Science',
+        });
       })
       .catch((error) => console.log('error', error));
   };
@@ -473,20 +473,34 @@ export default function Home({navigation}) {
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
-          <TouchableOpacity
-            style={{position: 'absolute', bottom: 50, right: '8%'}}
-            onPress={() => {
-              setAddWindow(true);
-            }}>
-            <Image
-              source={require('../assets/Plus.png')}
-              style={{
-                width: 50,
-                height: 50,
-                resizeMode: 'contain',
-              }}
-            />
-          </TouchableOpacity>
+          <ActionButton buttonColor={color.lightBlue} style={{zIndex: 8, bottom: 20, }}>
+            <ActionButton.Item
+              buttonColor={color.white}
+              title="Join Group"
+              onPress={() => console.log('notes tapped!')}>
+              <Image
+                source={require('../assets/Plus.png')}
+                style={{
+                  width: 50,
+                  height: 50,
+                  resizeMode: 'contain',
+                }}
+              />
+            </ActionButton.Item>
+            <ActionButton.Item
+              buttonColor={color.white}
+              title="Create Group"
+              onPress={() => {}}>
+              <Image
+                source={require('../assets/Plus.png')}
+                style={{
+                  width: 50,
+                  height: 50,
+                  resizeMode: 'contain',
+                }}
+              />
+            </ActionButton.Item>
+          </ActionButton>
           <BottomSheetFlatList
             data={[...new Set(chat)]}
             scrollEnabled={true}
