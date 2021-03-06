@@ -16,9 +16,14 @@ import {
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import color from '../styles/color';
+import {set} from 'react-native-reanimated';
 
 export default function Home({navigation}) {
   const [profPic, setProfPic] = useState();
+  const [sportPic, setSportPic] = useState();
+  const [entertainmentPic, setEntertainmentPic] = useState();
+  const [sciencePic, setSciencePic] = useState();
+  const [newsPic, setNewsPic] = useState();
 
   const styles = StyleSheet.create({
     safeView: {flex: 1, backgroundColor: color.white},
@@ -32,8 +37,20 @@ export default function Home({navigation}) {
       width: 50,
       height: 50,
       borderRadius: 50,
-      resizeMode: 'contain',
+      resizeMode: 'cover',
       backgroundColor: color.lightBlue,
+    },
+    imageCard: {
+      width: '49%',
+      height: '100%',
+      borderRadius: 20,
+      backgroundColor: color.lightBlue,
+    },
+    imageStyle: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 20,
+      resizeMode: 'cover',
     },
   });
 
@@ -45,13 +62,14 @@ export default function Home({navigation}) {
 
   useEffect(() => {
     getProfilePic();
+    getHeadline();
   }, []);
 
   const getProfilePic = async () => {
     try {
       const pic = storage()
         .ref('ProfilePicture')
-        .child(`${auth().currentUser.uid}.JPG`);
+        .child(`${auth().currentUser.uid}.jpg`);
       const url = await pic.getDownloadURL();
       setProfPic(url);
     } catch (e) {
@@ -59,6 +77,73 @@ export default function Home({navigation}) {
       const url = await pic.getDownloadURL();
       setProfPic(url);
     }
+  };
+
+  const getHeadline = async () => {
+    var requestOptions = {
+      method: 'GET',
+      redirect: 'follow',
+    };
+
+    await fetch(
+      'https://www.reddit.com/r/sports/top.json?limit=1',
+      requestOptions,
+    )
+      .then((response) => response.text())
+      .then((result) => {
+        const res = JSON.parse(result);
+        const image = res.data.children[0].data.thumbnail;
+        setSportPic(image);
+        const headline = res.data.children[0].data.title;
+        const url = res.data.children[0].data.url;
+        // console.log(res);
+      })
+      .catch((error) => console.log('error', error));
+
+    await fetch(
+      'https://www.reddit.com/r/entertainment/top.json?limit=1',
+      requestOptions,
+    )
+      .then((response) => response.text())
+      .then((result) => {
+        const res = JSON.parse(result);
+        const image = res.data.children[0].data.thumbnail;
+        setEntertainmentPic(image);
+        const headline = res.data.children[0].data.title;
+        const url = res.data.children[0].data.url;
+        // console.log(res);
+      })
+      .catch((error) => console.log('error', error));
+
+    await fetch(
+      'https://www.reddit.com/r/science/top.json?limit=1',
+      requestOptions,
+    )
+      .then((response) => response.text())
+      .then((result) => {
+        const res = JSON.parse(result);
+        const image = res.data.children[0].data.thumbnail;
+        setSciencePic(image);
+        const headline = res.data.children[0].data.title;
+        const url = res.data.children[0].data.url;
+        // console.log(res);
+      })
+      .catch((error) => console.log('error', error));
+
+    await fetch(
+      'https://www.reddit.com/r/news/top.json?limit=1',
+      requestOptions,
+    )
+      .then((response) => response.text())
+      .then((result) => {
+        const res = JSON.parse(result);
+        const image = res.data.children[0].data.thumbnail;
+        setNewsPic(image);
+        const headline = res.data.children[0].data.title;
+        const url = res.data.children[0].data.url;
+        // console.log(res);
+      })
+      .catch((error) => console.log('error', error));
   };
 
   return (
@@ -69,7 +154,7 @@ export default function Home({navigation}) {
             style={{
               fontFamily: 'Montserrat-Bold',
               color: color.gray,
-              fontSize: 18,
+              fontSize: 16,
               textTransform: 'capitalize',
             }}>
             Hello {auth().currentUser.displayName},
@@ -83,14 +168,24 @@ export default function Home({navigation}) {
             What would you like to discuss today?
           </Text>
         </View>
-        <TouchableOpacity style={{flex: 1, alignItems: 'flex-end'}}
-        onPress={() => {
-          navigation.push('Profile');
-        }}>
-          <Image
-            source={{uri: profPic}}
-            style={styles.profile}
-          />
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            alignItems: 'flex-end',
+            shadowColor: color.gray,
+            shadowOffset: {
+              width: 0,
+              height: 4,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+            backgroundColor: '#0000',
+          }}
+          onPress={() => {
+            navigation.push('Profile');
+          }}>
+          <Image source={{uri: profPic}} style={styles.profile} />
         </TouchableOpacity>
       </View>
       <View style={{height: '50%', marginHorizontal: '8%', marginTop: 10}}>
@@ -102,19 +197,13 @@ export default function Home({navigation}) {
             marginBottom: 5,
           }}>
           <TouchableOpacity
-            style={{
-              width: '49%',
-              height: '100%',
-              borderRadius: 20,
-              backgroundColor: color.blue,
-            }}></TouchableOpacity>
+            style={styles.imageCard}>
+            <Image source={{uri: sportPic}} style={styles.imageStyle} />
+          </TouchableOpacity>
           <TouchableOpacity
-            style={{
-              width: '49%',
-              height: '100%',
-              borderRadius: 20,
-              backgroundColor: color.lightBlue,
-            }}></TouchableOpacity>
+            style={styles.imageCard}>
+            <Image source={{uri: sciencePic}} style={styles.imageStyle} />
+          </TouchableOpacity>
         </View>
 
         <View
@@ -124,19 +213,13 @@ export default function Home({navigation}) {
             justifyContent: 'space-between',
           }}>
           <TouchableOpacity
-            style={{
-              width: '49%',
-              height: '100%',
-              borderRadius: 20,
-              backgroundColor: color.blue,
-            }}></TouchableOpacity>
+            style={styles.imageCard}>
+            <Image source={{uri: entertainmentPic}} style={styles.imageStyle} />
+          </TouchableOpacity>
           <TouchableOpacity
-            style={{
-              width: '49%',
-              height: '100%',
-              borderRadius: 20,
-              backgroundColor: color.lightBlue,
-            }}></TouchableOpacity>
+            style={styles.imageCard}>
+            <Image source={{uri: newsPic}} style={styles.imageStyle} />
+          </TouchableOpacity>
         </View>
       </View>
       <BottomSheet
