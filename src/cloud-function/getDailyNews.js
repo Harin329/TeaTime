@@ -23,7 +23,7 @@ export default getHeadline = async () => {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
+            Date: new Date().toDateString(),
             PhotoURL: image,
             Title: headline,
             URL: url,
@@ -48,7 +48,7 @@ export default getHeadline = async () => {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
+            Date: new Date().toDateString(),
             PhotoURL: image,
             Title: headline,
             URL: url,
@@ -73,7 +73,7 @@ export default getHeadline = async () => {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
+            Date: new Date().toDateString(),
             PhotoURL: image,
             Title: headline,
             URL: url,
@@ -98,7 +98,7 @@ export default getHeadline = async () => {
         const headline = article.title;
         const url = article.url;
         firestore().collection('Topics').add({
-            Date: firestore.FieldValue.serverTimestamp(),
+            Date: new Date().toDateString(),
             PhotoURL: image,
             Title: headline,
             URL: url,

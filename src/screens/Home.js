@@ -15,22 +15,14 @@ import {
 } from 'react-native';
 import BottomSheet, {BottomSheetFlatList} from '@gorhom/bottom-sheet';
 import color from '../styles/color';
-import {NEWSAPI} from '@env';
 import moment from 'moment';
 import ActionButton from 'react-native-action-button';
+// import getHeadline from '../cloud-function/getDailyNews';
 
 export default function Home({navigation}) {
   const [profPic, setProfPic] = useState();
-  const [sport, setSport] = useState({image: null, headline: '', url: ''});
-  const [entertainment, setEntertainment] = useState({
-    image: null,
-    headline: '',
-    url: '',
-  });
-  const [science, setScience] = useState({image: null, headline: '', url: ''});
-  const [news, setNews] = useState({image: null, headline: '', url: ''});
+  const [today, setToday] = useState([]);
   const [chat, setChat] = useState([]);
-  const [addWindow, setAddWindow] = useState(false);
 
   const firstOpacity = useRef(new Animated.Value(1)).current;
   const secondOpacity = useRef(new Animated.Value(0)).current;
@@ -118,7 +110,7 @@ export default function Home({navigation}) {
 
   useEffect(() => {
     getProfilePic();
-    // getHeadline();
+    getNews();
     getChat();
   }, []);
 
@@ -136,112 +128,14 @@ export default function Home({navigation}) {
     }
   };
 
-  const getHeadline = async () => {
-    var requestOptions = {
-      method: 'GET',
-      redirect: 'follow',
-    };
-
-    var url =
-      'https://newsapi.org/v2/top-headlines?' +
-      'country=us&' +
-      'category=sports&' +
-      'apiKey=' +
-      NEWSAPI;
-    await fetch(url, requestOptions)
-      .then((response) => response.text())
-      .then((result) => {
-        const res = JSON.parse(result);
-        const article = res.articles.find((item) => item.urlToImage !== null);
-        const image = article.urlToImage;
-
-        const headline = article.title;
-        const url = article.url;
-        firestore().collection('Topics').add({
-          Date: firestore.FieldValue.serverTimestamp(),
-          PhotoURL: image,
-          Title: headline,
-          URL: url,
-          Type: 'Sports',
-        });
-        // console.log(res);
+  const getNews = async () => {
+    console.log(new Date().toDateString())
+    setToday([]);
+    await firestore().collection('Topics').where('Date', '==', new Date().toDateString()).get().then((resDocs) => {
+      resDocs.forEach((doc) => {
+        setToday((prev) => [...prev, {image: doc.get('PhotoURL'), title: doc.get('Title'), url: doc.get('URL'), ID: doc.id}])
       })
-      .catch((error) => console.log('error', error));
-
-    var url =
-      'https://newsapi.org/v2/top-headlines?' +
-      'country=us&' +
-      'category=entertainment&' +
-      'apiKey=' +
-      NEWSAPI;
-    await fetch(url, requestOptions)
-      .then((response) => response.text())
-      .then((result) => {
-        const res = JSON.parse(result);
-        const article = res.articles.find((item) => item.urlToImage !== null);
-        const image = article.urlToImage;
-        const headline = article.title;
-        const url = article.url;
-        firestore().collection('Topics').add({
-          Date: firestore.FieldValue.serverTimestamp(),
-          PhotoURL: image,
-          Title: headline,
-          URL: url,
-          Type: 'Entertainment',
-        });
-        // console.log(res);
-      })
-      .catch((error) => console.log('error', error));
-
-    var url =
-      'https://newsapi.org/v2/top-headlines?' +
-      'country=us&' +
-      'category=business&' +
-      'apiKey=' +
-      NEWSAPI;
-    await fetch(url, requestOptions)
-      .then((response) => response.text())
-      .then((result) => {
-        const res = JSON.parse(result);
-        const article = res.articles.find((item) => item.urlToImage !== null);
-        const image = article.urlToImage;
-        const headline = article.title;
-        const url = article.url;
-        firestore().collection('Topics').add({
-          Date: firestore.FieldValue.serverTimestamp(),
-          PhotoURL: image,
-          Title: headline,
-          URL: url,
-          Type: 'Business',
-        });
-        // console.log(res);
-      })
-      .catch((error) => console.log('error', error));
-
-    var url =
-      'https://newsapi.org/v2/top-headlines?' +
-      'country=us&' +
-      'category=science&' +
-      'apiKey=' +
-      NEWSAPI;
-    await fetch(url, requestOptions)
-      .then((response) => response.text())
-      .then((result) => {
-        const res = JSON.parse(result);
-        console.log(res);
-        const article = res.articles.find((item) => item.urlToImage !== null);
-        const image = article.urlToImage;
-        const headline = article.title;
-        const url = article.url;
-        firestore().collection('Topics').add({
-          Date: firestore.FieldValue.serverTimestamp(),
-          PhotoURL: image,
-          Title: headline,
-          URL: url,
-          Type: 'Science',
-        });
-      })
-      .catch((error) => console.log('error', error));
+    })
   };
 
   const getChat = async () => {
@@ -363,7 +257,7 @@ export default function Home({navigation}) {
         </TouchableOpacity>
       </View>
       <FlatList
-        data={[sport, entertainment, news, science]}
+        data={today}
         horizontal={true}
         renderItem={({item}) => (
           <TouchableOpacity style={styles.imageCard}>
@@ -397,6 +291,7 @@ export default function Home({navigation}) {
           height: '60%',
           marginHorizontal: '8%',
           marginTop: 10,
+          paddingRight: 50,
         }}
       />
       <BottomSheet

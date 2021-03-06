@@ -14,6 +14,7 @@ import {
   FlatList,
   TextInput,
   Animated,
+  Linking,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import color from '../styles/color';
@@ -26,26 +27,18 @@ import {
 
 export default function Chat({navigation, route}) {
   var chatItem = route.params.chatItem;
+  const [today, setToday] = useState([]);
   const [profPic, setProfPic] = useState();
 
-  const [selecting, setSelecting] = useState(false);
+  const [topic, setTopic] = useState();
   const [recorded, setRecorded] = useState([1, 2, 3]);
   const [isDone, setIsDone] = useState(true);
-  const [sport, setSport] = useState({image: null, headline: '', url: ''});
-  const [entertainment, setEntertainment] = useState({
-    image: null,
-    headline: '',
-    url: '',
-  });
-  const [science, setScience] = useState({image: null, headline: '', url: ''});
-  const [news, setNews] = useState({image: null, headline: '', url: ''});
-
-  const firstOpacity = useRef(new Animated.Value(1)).current;
-  const [currMessage, setCurrMessage] = useState('');
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     getUserPic();
+    getNews();
+    checkTopicSelected()
 
     const messagesListener = firestore()
       .collection('Chats')
@@ -53,28 +46,52 @@ export default function Chat({navigation, route}) {
       .collection('Messages')
       .orderBy('createdAt', 'desc')
       .onSnapshot((querySnapshot) => {
-        const m = querySnapshot.docs.map((doc) => {
-          const firebaseData = doc.data();
+        if (querySnapshot.size !== 0) {
+          const m = querySnapshot.docs.map((doc) => {
+            const firebaseData = doc.data();
 
-          const data = {
-            _id: doc.id,
-            text: '',
-            createdAt: new Date().getTime(),
-            ...firebaseData,
-          };
+            const data = {
+              _id: doc.id,
+              text: '',
+              createdAt: new Date().getTime(),
+              ...firebaseData,
+            };
 
-          data.user = {
-            ...firebaseData.user
-          }
+            data.user = {
+              ...firebaseData.user,
+            };
 
-          return data;
-        });
+            return data;
+          });
 
-        setMessages(m);
+          setMessages(m);
+        }
       });
 
-      return () => messagesListener();
+    return () => messagesListener();
   }, []);
+
+  const getNews = async () => {
+    setToday([]);
+    await firestore().collection('Topics').where('Date', '==', new Date().toDateString()).get().then((resDocs) => {
+      resDocs.forEach((doc) => {
+        setToday((prev) => [...prev, {image: doc.get('PhotoURL'), title: doc.get('Title'), url: doc.get('URL'), ID: doc.id}])
+      })
+    });
+  };
+
+  const checkTopicSelected = async () => {
+    await firestore().collection('TOTD').where('Date', '==', new Date().toDateString()).where('GroupID', '==', chatItem.ID).get().then((resDocs) => {
+      if (!resDocs.empty) {
+        let tID = resDocs.docs[0].get('TopicID')
+        firestore().collection('Topics').doc(tID).get().then((doc) => {
+          if (doc.exists) {
+            setTopic(doc.data())
+          }
+        })
+      }
+    });
+  }
 
   function handleSend(newMessage = []) {
     setMessages(GiftedChat.append(messages, newMessage));
@@ -135,11 +152,14 @@ export default function Chat({navigation, route}) {
   const otherVoices = () => {
     return (
       <View>
-        <View
+        <TouchableOpacity
+        onPress={() => {
+          Linking.openURL(topic.URL);
+        }}
           style={{
             width: '90%',
             height: 100,
-            backgroundColor: color.lightBlue,
+            backgroundColor: color.white,
             alignSelf: 'center',
             marginTop: 20,
             borderRadius: 20,
@@ -149,24 +169,25 @@ export default function Chat({navigation, route}) {
             style={{
               fontFamily: 'Montserrat-Bold',
               fontSize: 16,
-              color: color.blue,
+              color: color.gray,
               alignSelf: 'center',
               flex: 2,
-              marginTop: 20,
               marginHorizontal: 20,
               textAlign: 'center',
+              textAlignVertical: 'center',
             }}>
-            News News News
+            {topic.Title}
           </Text>
           <View
             style={{
               flex: 1,
               justifyContent: 'center',
-              backgroundColor: 'green',
               borderTopRightRadius: 20,
               borderBottomRightRadius: 20,
-            }}></View>
-        </View>
+            }}>
+              <Image source={{uri: topic.PhotoURL}} style={{width: '100%', height: '100%', borderTopRightRadius: 20, borderBottomRightRadius: 20}}/>
+            </View>
+        </TouchableOpacity>
         <FlatList
           data={recorded}
           horizontal={true}
@@ -248,8 +269,8 @@ export default function Chat({navigation, route}) {
           />
         </TouchableOpacity>
       </View>
-      {isDone && otherVoices()}
-      {isDone && (
+      {topic && otherVoices()}
+      {topic && (
         <View
           style={{
             width: '100%',
@@ -322,7 +343,7 @@ export default function Chat({navigation, route}) {
           </ImageBackground>
         </View>
       )}
-      {!isDone && (
+      {!topic && (
         <View
           style={{
             width: '100%',
@@ -342,7 +363,7 @@ export default function Chat({navigation, route}) {
             Choose a topic.
           </Text>
           <FlatList
-            data={[sport, entertainment, news, science]}
+            data={today}
             horizontal={true}
             renderItem={({item}) => (
               <View>
