@@ -24,9 +24,10 @@ import {
   InputToolbar,
   MessageText,
 } from 'react-native-gifted-chat';
-import SoundPlayer from 'react-native-sound-player';
-import Sound from 'react-native-sound';
-import TrackPlayer from 'react-native-track-player';
+import TrackPlayer, {STATE_PLAYING} from 'react-native-track-player';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+
+const audioRecorderPlayer = new AudioRecorderPlayer();
 
 export default function Chat({navigation, route}) {
   var chatItem = route.params.chatItem;
@@ -35,7 +36,7 @@ export default function Chat({navigation, route}) {
 
   const [topic, setTopic] = useState();
   const [recorded, setRecorded] = useState([1, 2, 3]);
-  const [isDone, setIsDone] = useState(true);
+  const [recording, setRecording] = useState(false);
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
@@ -227,25 +228,31 @@ export default function Chat({navigation, route}) {
           renderItem={({item}) => (
             <TouchableOpacity
               onPress={() => {
-                storage().ref('Recording').child('Avicii_Hey_Brother_Original_Mix_PN.mp3').getDownloadURL().then((res) => {
-                  console.log(res)
-                  const start = async () =>  {
-                    await TrackPlayer.setupPlayer();
-  
-                    await TrackPlayer.add({
-                      id: '1',
-                      url: res,
-                      title: 'Harin',
-                      artist: 'Also Harin',
-                    })
-  
-                    await TrackPlayer.play();
-                  }
-  
-                  start();
-                });
+                storage()
+                  .ref('Recording')
+                  .child('Testing.mp3')
+                  .getDownloadURL()
+                  .then((res) => {
+                    console.log(res);
+                    const start = async () => {
+                      await TrackPlayer.setupPlayer();
 
-                
+                      const state = await TrackPlayer.getState();
+
+                      if (state === STATE_PLAYING) {
+                        await TrackPlayer.stop();
+                      } else {
+                        await TrackPlayer.add({
+                          id: '1',
+                          url: res,
+                          title: '',
+                          artist: '',
+                        });
+                        await TrackPlayer.play();
+                      }
+                    };
+                    start();
+                  });
               }}
               style={{
                 width: 70,
@@ -258,6 +265,22 @@ export default function Chat({navigation, route}) {
         />
       </View>
     );
+  };
+
+  const startRecording = async (audioRecorderPlayer) => {
+    setRecording(true);
+    await audioRecorderPlayer.startRecorder();
+    audioRecorderPlayer.addRecordBackListener((e) => {
+      // console.log(e.current_position);
+    });
+  };
+
+  const stopRecording = async (audioRecorderPlayer) => {
+    setRecording(false);
+    const res = await audioRecorderPlayer.stopRecorder();
+    audioRecorderPlayer.removeRecordBackListener();
+    console.log(res);
+    await storage().ref('Recording').child('Testing.mp3').putFile(res);
   };
 
   return (
@@ -405,65 +428,86 @@ export default function Chat({navigation, route}) {
             marginTop: 20,
             borderRadius: 20,
           }}>
-          <Text
-            style={{
-              color: color.blue,
-              fontFamily: 'Montserrat-Bold',
-              alignSelf: 'center',
-              margin: 20,
-              fontSize: 22,
-            }}>
-            Choose a topic.
-          </Text>
-          <FlatList
-            data={today}
-            horizontal={true}
-            renderItem={({item}) => (
-              <View>
-                <TouchableOpacity style={styles.imageCard}>
-                  <ImageBackground
-                    source={{uri: item.image}}
-                    style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
-                    resizeMode="cover"
-                    borderRadius={20}>
+          <ImageBackground
+            source={require('../assets/BackgroundChat.png')}
+            style={{width: '100%', height: '100%'}}
+            resizeMode={'stretch'}
+            borderRadius={20}>
+            <Text
+              style={{
+                color: color.blue,
+                fontFamily: 'Montserrat-Bold',
+                marginLeft: '8%',
+                margin: 20,
+                fontSize: 22,
+              }}>
+              Choose a topic.
+            </Text>
+            <FlatList
+              data={today}
+              horizontal={true}
+              renderItem={({item}) => (
+                <View>
+                  <TouchableOpacity style={styles.imageCard}>
                     <ImageBackground
-                      source={require('../assets/BlackFade.png')}
+                      source={{uri: item.image}}
                       style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
                       resizeMode="cover"
                       borderRadius={20}>
-                      <View style={{borderRadius: 20}}>
-                        <Text
-                          style={{
-                            color: color.white,
-                            fontFamily: 'Montserrat-Bold',
-                            fontSize: 20,
-                            margin: 20,
-                          }}>
-                          {item.title}
-                        </Text>
-                      </View>
+                      <ImageBackground
+                        source={require('../assets/BlackFade.png')}
+                        style={[
+                          styles.imageStyle,
+                          {justifyContent: 'flex-end'},
+                        ]}
+                        resizeMode="cover"
+                        borderRadius={20}>
+                        <View style={{borderRadius: 20}}>
+                          <Text
+                            style={{
+                              color: color.white,
+                              fontFamily: 'Montserrat-Bold',
+                              fontSize: 20,
+                              margin: 20,
+                            }}>
+                            {item.title}
+                          </Text>
+                        </View>
+                      </ImageBackground>
                     </ImageBackground>
-                  </ImageBackground>
-                </TouchableOpacity>
-                <TouchableOpacity style={{alignSelf: 'center', marginTop: 80}}>
-                  <Image
-                    source={require('../assets/Record.png')}
-                    style={{
-                      width: 50,
-                      height: 50,
-                      resizeMode: 'contain',
-                    }}
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-            keyExtractor={(i) => i.title}
-            contentContainerStyle={{
-              height: '60%',
-              marginHorizontal: '8%',
-              marginTop: 10,
-            }}
-          />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{alignSelf: 'center', marginTop: 80}}
+                    onPress={() => {
+                      if (recording) {
+                        stopRecording(audioRecorderPlayer);
+                      } else {
+                        startRecording(audioRecorderPlayer);
+                      }
+                    }}>
+                    <Image
+                      source={
+                        recording
+                          ? require('../assets/Recording.png')
+                          : require('../assets/Record.png')
+                      }
+                      style={{
+                        width: 70,
+                        height: 70,
+                        resizeMode: 'contain',
+                      }}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+              keyExtractor={(i) => i.title}
+              contentContainerStyle={{
+                height: '60%',
+                marginHorizontal: '8%',
+                marginTop: 10,
+              }}
+            />
+          </ImageBackground>
         </View>
       )}
     </SafeAreaView>
