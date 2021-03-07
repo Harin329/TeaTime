@@ -82,7 +82,6 @@ exports.detectLanguage = functions.storage
       fs.createReadStream(tmpPath)
           .on("data", function(arrayBuffer) {
             pushStream.write(arrayBuffer.slice());
-            console.log(`Array: Text=${arrayBuffer}`);
           })
           .on("end", function() {
             pushStream.close();
