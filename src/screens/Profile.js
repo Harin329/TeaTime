@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  ImageBackground
+  ImageBackground,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import color from '../styles/color';
@@ -30,9 +30,8 @@ export default function Profile({navigation, route}) {
       height: 100,
       borderRadius: 100,
       resizeMode: 'cover',
-      backgroundColor: color.blue,
       alignSelf: 'center',
-      top: '-18%',
+      top: '-16%',
       zIndex: 5,
     },
   });
@@ -123,8 +122,20 @@ export default function Profile({navigation, route}) {
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
+        style={{
+          shadowColor: '#2371E7',
+          shadowOffset: {
+            width: 0,
+            height: -4,
+          },
+          shadowOpacity: 0.8,
+          shadowRadius: 4,
+          elevation: 5,
+          backgroundColor: '#0000',
+        }}
         snapPoints={snapPoints}
         onChange={handleSheetChange}
+        backgroundComponent={null}
         enableOverDrag={false}
         handleComponent={null}>
         <View style={{flex: 1, backgroundColor: color.white, borderRadius: 20}}>
@@ -132,7 +143,7 @@ export default function Profile({navigation, route}) {
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
-              marginTop: '5%',
+              marginTop: '8%',
               marginHorizontal: '8%',
               height: 70,
             }}>
@@ -158,7 +169,7 @@ export default function Profile({navigation, route}) {
                   color: color.black,
                   fontSize: 20,
                   alignSelf: 'center',
-                  marginTop: 30,
+                  marginTop: 35,
                 }}>
                 {user.FullName !== undefined ? user.FullName : user.Username}
               </Text>
@@ -225,7 +236,7 @@ export default function Profile({navigation, route}) {
                 }}>
                 <Text
                   style={{
-                    fontFamily: 'Montserrat-Medium',
+                    fontFamily: 'Montserrat-SemiBold',
                     color: following ? color.white : color.gray,
                   }}>
                   {following ? 'Following' : 'Follow'}
@@ -282,9 +293,9 @@ export default function Profile({navigation, route}) {
                         console.log(res);
                         const start = async () => {
                           await TrackPlayer.setupPlayer();
-    
+
                           const state = await TrackPlayer.getState();
-    
+
                           if (state === STATE_PLAYING) {
                             await TrackPlayer.stop();
                           } else {
@@ -325,7 +336,7 @@ export default function Profile({navigation, route}) {
                     color: color.gray,
                     marginTop: 5,
                     marginLeft: 10,
-                    fontSize: 12
+                    fontSize: 12,
                   }}>
                   {moment(item.Timestamp.toDate(), 'YYYYMMDD').fromNow()}
                 </Text>

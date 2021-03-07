@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import firestore from '@react-native-firebase/firestore';
@@ -24,9 +25,9 @@ export default function SignUp({navigation}) {
   const confirmInput = useRef(null);
 
   const styles = StyleSheet.create({
-    safeView: {flex: 1, backgroundColor: color.lightBlue},
-    loginView: {flex: 1, alignItems: 'flex-end', padding: '5%'},
-    boldBlue: {fontFamily: 'Montserrat-Medium', color: color.blue},
+    safeView: {flex: 1, backgroundColor: color.white},
+    loginView: {flex: 1, alignItems: 'flex-end', padding: '5%', marginTop: 20},
+    boldBlue: {fontFamily: 'Montserrat-SemiBold', color: color.blue},
     flexCenter: {flex: 1, alignItems: 'center'},
     logo: {width: '50%', height: 100, resizeMode: 'contain'},
     registerText: {
@@ -59,7 +60,7 @@ export default function SignUp({navigation}) {
       alignItems: 'center',
       marginTop: 50,
     },
-    signUpText: {color: color.white, fontFamily: 'Montserrat-Medium'},
+    signUpText: {color: color.white, fontFamily: 'Montserrat-SemiBold'},
   });
 
   // Start Signup Process
@@ -114,8 +115,10 @@ export default function SignUp({navigation}) {
   };
 
   return (
-    <SafeAreaView style={styles.safeView}>
-      <KeyboardAwareScrollView>
+    <View style={styles.safeView}>
+            <ImageBackground style={{width: '100%', height: '100%'}} source={require('../assets/BackgroundLogin.png')}>
+
+      <KeyboardAwareScrollView contentContainerStyle={{paddingTop: 30}}>
         <TouchableOpacity
           onPress={() => {
             navigation.push('Login');
@@ -182,6 +185,7 @@ export default function SignUp({navigation}) {
           <Text style={styles.signUpText}>Sign Up</Text>
         </TouchableOpacity>
       </KeyboardAwareScrollView>
-    </SafeAreaView>
+      </ImageBackground>
+    </View>
   );
 }

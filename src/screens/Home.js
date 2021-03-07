@@ -55,7 +55,15 @@ export default function Home({navigation}) {
       height: '100%',
       borderRadius: 20,
       marginRight: 10,
-      backgroundColor: color.lightBlue,
+      shadowColor: color.gray,
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+      backgroundColor: '#0000',
     },
     imageStyle: {
       width: '100%',
@@ -209,7 +217,8 @@ export default function Home({navigation}) {
         style={{
           flex: 3,
           marginLeft: 10,
-          fontFamily: 'Montserrat-Medium',
+          fontSize: 16,
+          fontFamily: 'Montserrat-Bold',
           color: color.white,
         }}>
         {item.Name}
@@ -217,7 +226,7 @@ export default function Home({navigation}) {
       <Text
         style={{
           flex: 1,
-          fontFamily: 'Montserrat-Medium',
+          fontFamily: 'Montserrat-SemiBold',
           color: color.lightBlue,
           fontSize: 10,
         }}>
@@ -251,8 +260,8 @@ export default function Home({navigation}) {
           </Text>
           <Text
             style={{
-              fontFamily: 'Montserrat-Medium',
-              color: color.black,
+              fontFamily: 'Montserrat-SemiBold',
+              color: color.blue,
               fontSize: 20,
             }}>
             What would you like to discuss today?
@@ -327,6 +336,17 @@ export default function Home({navigation}) {
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
+        style={{
+          shadowColor: color.gray,
+          shadowOffset: {
+            width: 0,
+            height: -4,
+          },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 5,
+          backgroundColor: '#0000',
+        }}
         snapPoints={snapPoints}
         onAnimate={onSheetChange}
         backgroundComponent={null}
@@ -342,8 +362,9 @@ export default function Home({navigation}) {
               style={{
                 color: color.white,
                 fontFamily: 'Montserrat-Bold',
-                fontSize: 18,
+                fontSize: 14,
                 opacity: firstOpacity,
+                marginLeft: 10,
               }}>
               Your Chats
             </Animated.Text>
@@ -402,10 +423,22 @@ export default function Home({navigation}) {
           </Animated.View>
           <ActionButton
             buttonColor={color.lightBlue}
+            buttonTextStyle={{color: color.blue}}
+            shadowStyle={{
+              shadowColor: '#2371E7',
+              shadowOffset: {
+                width: 0,
+                height: 4,
+              },
+              shadowOpacity: 0.5,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
             style={{zIndex: 8, bottom: 20}}>
             <ActionButton.Item
               buttonColor={color.white}
               title="Join Group"
+              textStyle={{fontFamily: 'Montserrat'}}
               onPress={() => setJoin(true)}>
               <Image
                 source={require('../assets/Plus.png')}
@@ -419,6 +452,7 @@ export default function Home({navigation}) {
             <ActionButton.Item
               buttonColor={color.white}
               title="Create Group"
+              textStyle={{fontFamily: 'Montserrat'}}
               onPress={() => {
                 setAdd(true);
               }}>
@@ -614,16 +648,22 @@ export default function Home({navigation}) {
                         LastActive: firestore.FieldValue.serverTimestamp(),
                         Name: groupName,
                         Picture: '',
-                        Users: [auth().currentUser.uid]
-                      }).then((res) => {
-                        res.set({
-                          ID: res.id,
-                          Code: res.id.toString().substring(0, 5)
-                        }, {merge: true}).then(() => {
-                          setAdd(false);
-                          getChat();
-                        })
+                        Users: [auth().currentUser.uid],
                       })
+                      .then((res) => {
+                        res
+                          .set(
+                            {
+                              ID: res.id,
+                              Code: res.id.toString().substring(0, 5),
+                            },
+                            {merge: true},
+                          )
+                          .then(() => {
+                            setAdd(false);
+                            getChat();
+                          });
+                      });
                   }}>
                   <Text
                     style={{
@@ -643,18 +683,29 @@ export default function Home({navigation}) {
             scrollEnabled={true}
             showsVerticalScrollIndicator={false}
             renderItem={renderChat}
+            backgroundComponent={null}
             contentContainerStyle={{marginBottom: 100}}
             ItemSeparatorComponent={() => (
               <View
-                style={{width: '100%', height: 1, backgroundColor: color.white}}
+                style={{
+                  width: '100%',
+                  height: 1,
+                  backgroundColor: color.white,
+                  borderRadius: 1,
+                }}
               />
             )}
             ListFooterComponent={() => (
               <View
-                style={{width: '100%', height: 1, backgroundColor: color.white}}
+                style={{
+                  width: '100%',
+                  height: 1,
+                  backgroundColor: color.white,
+                  borderRadius: 1,
+                }}
               />
             )}
-            style={{marginHorizontal: '8%'}}
+            style={{marginHorizontal: '8%', marginTop: -10}}
             keyExtractor={(i) => i.ID}
           />
         </View>

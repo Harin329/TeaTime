@@ -43,7 +43,6 @@ export default function Chat({navigation, route}) {
     getNews();
     checkTopicSelected();
     getUsernames();
-    
 
     const messagesListener = firestore()
       .collection('Chats')
@@ -78,13 +77,20 @@ export default function Chat({navigation, route}) {
 
   const getUsernames = async () => {
     chatItem.Users.forEach(async (user) => {
-      firestore().collection('Users').doc(user).get().then((doc) =>  {
-        if (!users.some((item) => doc.get('Username') === item.name)) {
-          setUsers((prev) => [...prev, {name: doc.get('Username'), id: doc.id}]);
-        }
-      });
+      firestore()
+        .collection('Users')
+        .doc(user)
+        .get()
+        .then((doc) => {
+          if (!users.some((item) => doc.get('Username') === item.name)) {
+            setUsers((prev) => [
+              ...prev,
+              {name: doc.get('Username'), id: doc.id},
+            ]);
+          }
+        });
     });
-  }
+  };
 
   const getNews = async () => {
     setToday([]);
@@ -150,7 +156,7 @@ export default function Chat({navigation, route}) {
     return () => topicListener();
   };
 
-  var recVar = []
+  var recVar = [];
   const getUserVoices = async (TOPIC_ID) => {
     const voiceListener = firestore()
       .collection('Recordings')
@@ -160,24 +166,24 @@ export default function Chat({navigation, route}) {
         if (!resDocs.empty) {
           resDocs.forEach((doc) => {
             (async () => {
-            try {
-              const pic = storage()
-                .ref('ProfilePicture')
-                .child(`${doc.get('UserID')}.jpg`);
-              const url = await pic.getDownloadURL();
-              if (!recVar.some((item) => item.UserID === doc.data().UserID)) {
-                recVar.push({...doc.data(), url})
-                setRecorded((prev) => [...prev, {...doc.data(), url}]);
+              try {
+                const pic = storage()
+                  .ref('ProfilePicture')
+                  .child(`${doc.get('UserID')}.jpg`);
+                const url = await pic.getDownloadURL();
+                if (!recVar.some((item) => item.UserID === doc.data().UserID)) {
+                  recVar.push({...doc.data(), url});
+                  setRecorded((prev) => [...prev, {...doc.data(), url}]);
+                }
+              } catch (e) {
+                const pic = storage().ref('DefaultProfPic.png');
+                const url = await pic.getDownloadURL();
+                if (!recVar.some((item) => item.UserID === doc.data().UserID)) {
+                  recVar.push({...doc.data(), url});
+                  setRecorded((prev) => [...prev, {...doc.data(), url}]);
+                }
               }
-            } catch (e) {
-              const pic = storage().ref('DefaultProfPic.png');
-              const url = await pic.getDownloadURL();
-              if (!recVar.some((item) => item.UserID === doc.data().UserID)) {
-                recVar.push({...doc.data(), url})
-                setRecorded((prev) => [...prev, {...doc.data(), url}]);
-              }
-            }
-          })();
+            })();
           });
         }
       });
@@ -188,12 +194,18 @@ export default function Chat({navigation, route}) {
     setMessages(GiftedChat.append(messages, newMessage));
 
     users.forEach((hashtag) => {
-      if (newMessage[0].text.includes('#'+hashtag.name)) {
-        firestore().collection('Recordings').doc(hashtag.id + '_' + topic.ID).set({
-          'Global': true
-        }, {merge: true})
+      if (newMessage[0].text.includes('#' + hashtag.name)) {
+        firestore()
+          .collection('Recordings')
+          .doc(hashtag.id + '_' + topic.ID)
+          .set(
+            {
+              Global: true,
+            },
+            {merge: true},
+          );
       }
-    })
+    });
 
     firestore()
       .collection('Chats')
@@ -239,6 +251,14 @@ export default function Chat({navigation, route}) {
       borderRadius: 20,
       marginRight: 10,
       backgroundColor: color.lightBlue,
+      shadowColor: color.gray,
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 5,
     },
     imageStyle: {
       width: '100%',
@@ -263,10 +283,18 @@ export default function Chat({navigation, route}) {
             marginTop: 20,
             borderRadius: 20,
             flexDirection: 'row',
+            shadowColor: '#2371E7',
+            shadowOffset: {
+              width: 0,
+              height: 4,
+            },
+            shadowOpacity: 0.5,
+            shadowRadius: 4,
+            elevation: 5,
           }}>
           <Text
             style={{
-              fontFamily: 'Montserrat-Medium',
+              fontFamily: 'Montserrat-SemiBold',
               fontSize: 16,
               color: color.gray,
               alignSelf: 'center',
@@ -307,7 +335,7 @@ export default function Chat({navigation, route}) {
                   .child(item.UserID + '_' + item.TopicID + '.mp3')
                   .getDownloadURL()
                   .then((res) => {
-                    console.log('here')
+                    console.log('here');
                     console.log(res);
                     const start = async () => {
                       await TrackPlayer.setupPlayer();
@@ -366,12 +394,17 @@ export default function Chat({navigation, route}) {
     await storage()
       .ref('Recording')
       .child(auth().currentUser.uid + '_' + topicID + '.mp3')
-      .putFile(res).catch(e => console.log(e));
-    await firestore().collection('TOTD').doc(topicID + '_' + chatItem.ID).set({
-      Date: new Date().toDateString(),
-      GroupID: chatItem.ID,
-      TopicID: topicID,
-    }).catch(e => console.log(e));
+      .putFile(res)
+      .catch((e) => console.log(e));
+    await firestore()
+      .collection('TOTD')
+      .doc(topicID + '_' + chatItem.ID)
+      .set({
+        Date: new Date().toDateString(),
+        GroupID: chatItem.ID,
+        TopicID: topicID,
+      })
+      .catch((e) => console.log(e));
     await firestore()
       .collection('Recordings')
       .doc(auth().currentUser.uid + '_' + topicID)
@@ -379,7 +412,8 @@ export default function Chat({navigation, route}) {
         TopicID: topicID,
         UserID: auth().currentUser.uid,
         Timestamp: firestore.FieldValue.serverTimestamp(),
-      }).catch(e => console.log(e));
+      })
+      .catch((e) => console.log(e));
     setMyRecording(true);
   };
 
@@ -432,9 +466,11 @@ export default function Chat({navigation, route}) {
           }}>
           {chatItem.Name}
         </Text>
-        <TouchableOpacity style={{flex: 0.5}} onPress={() => {
-          AlertMe('Group Code is: ' + chatItem.Code, '', null);
-        }}>
+        <TouchableOpacity
+          style={{flex: 0.5}}
+          onPress={() => {
+            AlertMe('Group Code is: ' + chatItem.Code, '', null);
+          }}>
           <Image
             source={require('../assets/More.png')}
             style={{
@@ -456,6 +492,14 @@ export default function Chat({navigation, route}) {
             backgroundColor: color.white,
             marginTop: 20,
             borderRadius: 20,
+            shadowColor: '#2371E7',
+            shadowOffset: {
+              width: 0,
+              height: -4,
+            },
+            shadowOpacity: 0.5,
+            shadowRadius: 4,
+            elevation: 5,
           }}>
           <ImageBackground
             source={require('../assets/BackgroundChat.png')}
@@ -477,7 +521,7 @@ export default function Chat({navigation, route}) {
                   />
                 )}
                 textInputStyle={{
-                  fontFamily: 'Montserrat-Medium',
+                  fontFamily: 'Montserrat-SemiBold',
                   paddingTop: 18,
                 }}
                 renderInputToolbar={(props) => (
@@ -529,6 +573,14 @@ export default function Chat({navigation, route}) {
             backgroundColor: color.white,
             marginTop: 20,
             borderRadius: 20,
+            shadowColor: '#2371E7',
+            shadowOffset: {
+              width: 0,
+              height: -4,
+            },
+            shadowOpacity: 0.5,
+            shadowRadius: 4,
+            elevation: 5,
           }}>
           <ImageBackground
             source={require('../assets/BackgroundChat.png')}
@@ -581,7 +633,18 @@ export default function Chat({navigation, route}) {
                     </ImageBackground>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{alignSelf: 'center', marginTop: 80}}
+                    style={{
+                      alignSelf: 'center',
+                      marginTop: 80,
+                      shadowColor: '#AFB9CA',
+                      shadowOffset: {
+                        width: 0,
+                        height: 4,
+                      },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 5,
+                    }}
                     onPress={() => {
                       if (recording) {
                         stopRecording(audioRecorderPlayer, item.ID);

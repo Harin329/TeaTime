@@ -20,11 +20,11 @@ exports.detectLanguage = functions.storage
       // const bucket = storage.bucket(object.bucket);
       // const file = bucket.file(object.name);
 
-      const uri = "gs://sfhacks2021.appspot.com/Recording/air.mp3"; // gs://${bucket.name}/${file.name}
+      const uri = "gs://sfhacks2021.appspot.com/Recording/FM9mCxpIL0PYJ0Vw41tsHbjfNv12_PiIfuoPZ6zv482Rsysxc.mp3"; // gs://${bucket.name}/${file.name}
 
       const config = {
         encoding: "LINEAR16",
-        sampleRateHertz: 8000,
+        sampleRateHertz: 384000,
         languageCode: "en-US",
         enableAutomaticPunctuation: "true",
         model: "default",

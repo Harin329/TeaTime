@@ -148,7 +148,7 @@ export default function Global({navigation, route}) {
         <Text
           style={{
             color: color.white,
-            fontFamily: 'Montserrat-Bold',
+            fontFamily: 'Montserrat-SemiBold',
             fontSize: 18,
             flex: 5,
           }}>
@@ -181,6 +181,7 @@ export default function Global({navigation, route}) {
         index={0}
         snapPoints={snapPoints}
         onChange={handleSheetChange}
+        backgroundComponent={null}
         enableOverDrag={false}
         handleComponent={null}>
         <View style={{flex: 1, backgroundColor: color.white, borderRadius: 20}}>
@@ -303,7 +304,15 @@ export default function Global({navigation, route}) {
             keyExtractor={(i) => i}
             contentContainerStyle={{paddingBottom: 50}}
             renderItem={({item, index}) => (
-              <View style={{width: '44%', marginLeft: 15, marginBottom: 10}}>
+              <View style={{width: '44%', marginLeft: 15, marginBottom: 10, shadowColor: color.gray,
+              shadowOffset: {
+                width: 0,
+                height: 4,
+              },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+              backgroundColor: '#0000'}}>
                 <TouchableOpacity
                   style={{
                     width: '100%',

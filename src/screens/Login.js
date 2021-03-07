@@ -7,6 +7,7 @@ import {
   View,
   TouchableOpacity,
   Image,
+  ImageBackground,
 } from 'react-native';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import auth from '@react-native-firebase/auth';
@@ -19,12 +20,12 @@ export default function Login({navigation}) {
   const passwordInput = useRef(null);
 
   const styles = StyleSheet.create({
-    safeView: {flex: 1, backgroundColor: color.lightBlue},
+    safeView: {flex: 1, backgroundColor: color.white},
     loginView: {flex: 1, alignItems: 'flex-start', padding: '5%'},
-    boldBlue: {fontFamily: 'Montserrat-Medium', color: color.blue},
+    boldBlue: {fontFamily: 'Montserrat-SemiBold', color: color.blue},
     flexCenter: {flex: 1, alignItems: 'center'},
     logo: {width: '50%', height: 100, resizeMode: 'contain'},
-    back: {width: 24, height: 24, resizeMode: 'contain'},
+    back: {width: 24, height: 24, resizeMode: 'contain', marginTop: 20},
     registerText: {
       fontSize: 20,
       paddingVertical: 20,
@@ -55,7 +56,7 @@ export default function Login({navigation}) {
       alignItems: 'center',
       marginTop: 50,
     },
-    signUpText: {color: color.white, fontFamily: 'Montserrat-Medium'},
+    signUpText: {color: color.white, fontFamily: 'Montserrat-SemiBold'},
     forgot: {
       color: color.blue,
       fontFamily: 'Montserrat',
@@ -85,8 +86,9 @@ export default function Login({navigation}) {
   };
 
   return (
-    <SafeAreaView style={styles.safeView}>
-      <KeyboardAwareScrollView>
+    <View style={styles.safeView}>
+      <ImageBackground style={{width: '100%', height: '100%'}} source={require('../assets/BackgroundLogin.png')}>
+      <KeyboardAwareScrollView contentContainerStyle={{paddingTop: 30}}>
         <TouchableOpacity
           onPress={() => {
             navigation.pop();
@@ -95,7 +97,7 @@ export default function Login({navigation}) {
           <Image source={require('../assets/Back.png')} style={styles.back} />
         </TouchableOpacity>
         <View style={styles.flexCenter}>
-          <Image source={require('../assets/Logo.png')} style={styles.logo} />
+          <Image style={styles.logo} />
         </View>
         <View style={styles.flexCenter}>
           <Text style={styles.registerText}>Login</Text>
@@ -128,6 +130,7 @@ export default function Login({navigation}) {
           <Text style={styles.signUpText}>Log In</Text>
         </TouchableOpacity>
       </KeyboardAwareScrollView>
-    </SafeAreaView>
+      </ImageBackground>
+    </View>
   );
 }
