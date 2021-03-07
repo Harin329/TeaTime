@@ -9,44 +9,102 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  ImageBackground
+  ImageBackground,
+  TextInput,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import color from '../styles/color';
 import moment from 'moment';
 import TrackPlayer, {STATE_PLAYING} from 'react-native-track-player';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 export default function Global({navigation, route}) {
-  const TopicID = route.params.TopicID;
+  const topic = route.params.Topic;
   const [profPic, setProfPic] = useState();
-  const [following, setFollowing] = useState(false);
-  const [user, setUser] = useState({});
   const [recordings, setRecordings] = useState([]);
+  const [search, setSearch] = useState([]);
+  const [language, setLanguage] = useState();
 
   const styles = StyleSheet.create({
     safeView: {flex: 1, backgroundColor: color.blue},
     profile: {
-      width: 100,
-      height: 100,
-      borderRadius: 100,
+      width: 50,
+      height: 50,
+      borderRadius: 50,
       resizeMode: 'cover',
-      backgroundColor: color.blue,
-      alignSelf: 'center',
-      top: '-18%',
-      zIndex: 5,
+      backgroundColor: color.lightBlue,
     },
   });
 
   const bottomSheetRef = useRef(null);
-  const snapPoints = useMemo(() => ['80%'], []);
+  const snapPoints = useMemo(() => ['85%'], []);
   const handleSheetChange = useCallback((index) => {
     console.log(index);
   }, []);
 
   useEffect(() => {
-    getUserInfo();
     getProfilePic();
+    getVoices();
   }, []);
+
+  const getVoices = async () => {
+    await firestore()
+      .collection('Recordings')
+      .where('Global', '==', true)
+      .where('TopicID', '==', topic.ID)
+      .orderBy('Timestamp', 'desc')
+      .get()
+      .then((resDocs) => {
+        resDocs.forEach(async (doc) => {
+          let data = doc.data();
+          await firestore()
+            .collection('Topics')
+            .doc(data.TopicID)
+            .get()
+            .then(async (topicDoc) => {
+              if (topicDoc.exists) {
+                try {
+                  const pic = storage()
+                    .ref('ProfilePicture')
+                    .child(`${data.UserID}.jpg`);
+                  const url = await pic.getDownloadURL();
+                  if (
+                    !recordings.some(
+                      (item) =>
+                        item.UserID === data.UserID &&
+                        item.TopicID === data.TopicID,
+                    )
+                  ) {
+                    setRecordings((prev) => [
+                      ...prev,
+                      {...data, ...topicDoc.data(), userPic: url},
+                    ]);
+                  }
+                } catch (e) {
+                  const pic = storage().ref('DefaultProfPic.png');
+                  const url = await pic.getDownloadURL();
+                  if (
+                    !recordings.some(
+                      (item) =>
+                        item.UserID === data.UserID &&
+                        item.TopicID === data.TopicID,
+                    )
+                  ) {
+                    setRecordings((prev) => [
+                      ...prev,
+                      {...data, ...topicDoc.data(), userPic: url},
+                    ]);
+                  }
+                }
+              }
+            });
+        });
+      });
+  };
+
+  const changeLanguage = (language) => {
+    setLanguage(language);
+  };
 
   const getProfilePic = async () => {
     try {
@@ -65,59 +123,58 @@ export default function Global({navigation, route}) {
   return (
     <View style={styles.safeView}>
       <View
-              style={{
-                opacity: secondOpacity,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}>
-              <TouchableOpacity
-                onPress={() => {
-                  bottomSheetRef.current.collapse();
-                }}>
-                <Image
-                  source={require('../assets/Back.png')}
-                  style={{
-                    tintColor: color.white,
-                    width: 24,
-                    height: 24,
-                    resizeMode: 'contain',
-                    marginRight: 20,
-                    transform: [{rotate: '270deg'}],
-                  }}
-                />
-              </TouchableOpacity>
-              <Text
-                style={{
-                  color: color.white,
-                  fontFamily: 'Montserrat-Bold',
-                  fontSize: 18,
-                }}>
-                Your Chats
-              </Text>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  alignItems: 'flex-end',
-                  shadowColor: color.gray,
-                  shadowOffset: {
-                    width: 0,
-                    height: 4,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 5,
-                  backgroundColor: '#0000',
-                }}
-                onPress={() => {
-                  navigation.push('Profile', {
-                    UserID: auth().currentUser.uid
-                  });
-                }}>
-                <Image source={{uri: profPic}} style={styles.profile} />
-              </TouchableOpacity>
-            </View>
-      <Image style={{width: '100%', height: '30%'}} />
-      <Image source={{uri: profPic}} style={styles.profile} />
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: 50,
+          marginHorizontal: '8%',
+        }}>
+        <TouchableOpacity
+          style={{flex: 1}}
+          onPress={() => {
+            navigation.pop();
+          }}>
+          <Image
+            source={require('../assets/Back.png')}
+            style={{
+              tintColor: color.white,
+              width: 24,
+              height: 24,
+              resizeMode: 'contain',
+            }}
+          />
+        </TouchableOpacity>
+        <Text
+          style={{
+            color: color.white,
+            fontFamily: 'Montserrat-Bold',
+            fontSize: 18,
+            flex: 5,
+          }}>
+          Here's what the world has to say...
+        </Text>
+        <TouchableOpacity
+          style={{
+            flex: 2,
+            alignItems: 'flex-end',
+            shadowColor: color.gray,
+            shadowOffset: {
+              width: 0,
+              height: 4,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+            backgroundColor: '#0000',
+          }}
+          onPress={() => {
+            navigation.push('Profile', {
+              UserID: auth().currentUser.uid,
+            });
+          }}>
+          <Image source={{uri: profPic}} style={styles.profile} />
+        </TouchableOpacity>
+      </View>
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
@@ -131,144 +188,124 @@ export default function Global({navigation, route}) {
               flexDirection: 'row',
               justifyContent: 'space-between',
               marginTop: '5%',
-              marginHorizontal: '8%',
-              height: 70,
-            }}>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.pop();
-              }}
-              style={{flex: 1}}>
-              <Image
-                source={require('../assets/Back.png')}
-                style={{
-                  width: 24,
-                  height: 24,
-                  resizeMode: 'contain',
-                  tintColor: color.blue,
-                }}
-              />
-            </TouchableOpacity>
-            <View style={{flex: 3}}>
-              <Text
-                style={{
-                  fontFamily: 'Montserrat-Bold',
-                  color: color.black,
-                  fontSize: 20,
-                  alignSelf: 'center',
-                  marginTop: 30,
-                }}>
-                {user.FullName !== undefined ? user.FullName : user.Username}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                UserID === auth().currentUser.uid ? auth().signOut() : null;
-              }}
-              style={{flex: 1, alignItems: 'flex-end'}}>
-              <Image
-                source={require('../assets/More.png')}
-                style={{
-                  width: 24,
-                  height: 24,
-                  resizeMode: 'contain',
-                  tintColor: color.blue,
-                }}
-              />
-            </TouchableOpacity>
-          </View>
-          <View
-            style={{
-              height: 50,
-              flexDirection: 'row',
-              justifyContent: 'center',
+              marginHorizontal: '5%',
+              height: 55,
             }}>
             <View
               style={{
-                width: 100,
+                flex: 7,
                 flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
+                borderWidth: 1,
+                borderRadius: 10,
+                height: 40,
+                borderColor: color.gray,
               }}>
               <Image
-                source={require('../assets/Follow.png')}
+                source={require('../assets/Search.png')}
                 style={{
                   width: 20,
                   height: 20,
                   resizeMode: 'contain',
-                  tintColor: color.gray,
+                  alignSelf: 'center',
+                  marginHorizontal: 5,
                 }}
               />
-              <Text
+              <TextInput
+                placeholder="Search..."
+                onChangeText={(text) => setSearch(text)}
                 style={{
-                  fontFamily: 'Montserrat-Bold',
+                  fontFamily: 'Montserrat',
                   color: color.gray,
                   marginLeft: 5,
-                }}>
-                {user.Followers}
-              </Text>
+                }}
+                placeholderTextColor={color.gray}
+                value={search}
+              />
             </View>
-            <View style={{width: 10}} />
-            <View style={{width: 100, justifyContent: 'center'}}>
-              <TouchableOpacity
-                onPress={() => setFollowing(!following)}
-                style={{
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: color.gray,
-                  height: '60%',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  backgroundColor: following ? color.gray : 'transparent',
-                }}>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    color: following ? color.white : color.gray,
-                  }}>
-                  {following ? 'Following' : 'Follow'}
-                </Text>
-              </TouchableOpacity>
+            <View style={{flex: 1}} />
+            <View
+              style={{
+                flex: 3.5,
+                justifyContent: 'flex-start',
+                height: 100,
+              }}>
+              <DropDownPicker
+                items={[
+                  {
+                    label: 'English',
+                    value: 'English',
+                    icon: () => null,
+                  },
+                  {
+                    label: 'French',
+                    value: 'French',
+                    icon: () => null,
+                  },
+                ]}
+                containerStyle={{height: 40, zIndex: 10}}
+                globalTextStyle={{fontFamily: 'Montserrat', color: color.gray}}
+                arrowColor={color.gray}
+                style={{borderColor: 'transparent'}}
+                defaultValue="French"
+                onChangeItem={(item) => changeLanguage(item.value)}
+              />
             </View>
           </View>
+          {console.log(topic)}
           <FlatList
             data={recordings}
             numColumns={2}
             ListHeaderComponent={
-              <View style={{marginHorizontal: '8%'}}>
+              <TouchableOpacity
+                style={{
+                  marginHorizontal: '5%',
+                  height: 100,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: color.gray,
+                  marginBottom: 20,
+                  flexDirection: 'row'
+                }}>
                 <Text
                   style={{
                     fontFamily: 'Montserrat-Bold',
-                    color: color.black,
-                  }}>
-                  About
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat',
+                    fontSize: 14,
                     color: color.gray,
-                    marginTop: 10,
+                    alignSelf: 'center',
+                    flex: 2,
+                    marginHorizontal: 15,
+                    textAlign: 'center',
+                    textAlignVertical: 'center',
                   }}>
-                  {user.Bio}
+                  {topic.title}
                 </Text>
-                <Text
+                <View
                   style={{
-                    fontFamily: 'Montserrat-Bold',
-                    color: color.black,
-                    marginVertical: 30,
+                    flex: 1,
+                    justifyContent: 'center',
+                    borderTopRightRadius: 20,
+                    borderBottomRightRadius: 20,
                   }}>
-                  Endorsed Notes
-                </Text>
-              </View>
+                  <Image
+                    source={{uri: topic.image}}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderTopRightRadius: 18,
+                      borderBottomRightRadius: 18,
+                    }}
+                  />
+                </View>
+              </TouchableOpacity>
             }
+            style={{zIndex: -1, marginTop: 10}}
             keyExtractor={(i) => i}
             renderItem={({item}) => (
               <View style={{width: '44%', marginLeft: 15, marginBottom: 30}}>
                 <TouchableOpacity
                   style={{
                     width: '100%',
-                    height: 200,
-                    backgroundColor: 'green',
+                    height: Math.floor((Math.random() * 300) + 120),
                     borderRadius: 20,
                   }}
                   onPress={() => {
@@ -280,9 +317,9 @@ export default function Global({navigation, route}) {
                         console.log(res);
                         const start = async () => {
                           await TrackPlayer.setupPlayer();
-    
+
                           const state = await TrackPlayer.getState();
-    
+
                           if (state === STATE_PLAYING) {
                             await TrackPlayer.stop();
                           } else {
@@ -298,11 +335,14 @@ export default function Global({navigation, route}) {
                         start();
                       });
                   }}>
+                    {console.log(item)}
                   <ImageBackground
-                    source={{uri: item.PhotoURL}}
+                    source={{uri: item.userPic}}
                     style={{
                       width: '100%',
                       height: '100%',
+                      alignItems: 'flex-end',
+                      justifyContent: 'flex-end',
                     }}
                     resizeMode={'cover'}
                     borderRadius={20}>
@@ -323,7 +363,7 @@ export default function Global({navigation, route}) {
                     color: color.gray,
                     marginTop: 5,
                     marginLeft: 10,
-                    fontSize: 12
+                    fontSize: 12,
                   }}>
                   {moment(item.Timestamp.toDate(), 'YYYYMMDD').fromNow()}
                 </Text>

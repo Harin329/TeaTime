@@ -518,7 +518,7 @@ export default function Chat({navigation, route}) {
                 fontSize: 22,
               }}>
               {topic !== undefined
-                ? 'The topic for today is:'
+                ? 'The topic for today is...'
                 : 'Choose a topic.'}
             </Text>
             <FlatList

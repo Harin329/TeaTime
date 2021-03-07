@@ -264,7 +264,7 @@ export default function Home({navigation}) {
         renderItem={({item}) => (
           <TouchableOpacity style={styles.imageCard} onPress={() => {
             navigation.push('Global', {
-              TopicID: item.ID
+              Topic: item
             })
           }}>
             <ImageBackground
