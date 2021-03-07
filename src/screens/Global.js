@@ -11,6 +11,7 @@ import {
   FlatList,
   ImageBackground,
   TextInput,
+  Linking,
 } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import color from '../styles/color';
@@ -246,17 +247,17 @@ export default function Global({navigation, route}) {
                 globalTextStyle={{fontFamily: 'Montserrat', color: color.gray}}
                 arrowColor={color.gray}
                 style={{borderColor: 'transparent'}}
-                defaultValue="French"
+                defaultValue="English"
                 onChangeItem={(item) => changeLanguage(item.value)}
               />
             </View>
           </View>
-          {console.log(topic)}
           <FlatList
-            data={recordings}
+            data={[...recordings, ...recordings]}
             numColumns={2}
             ListHeaderComponent={
               <TouchableOpacity
+              onPress={() => Linking.openURL(topic.url)}
                 style={{
                   marginHorizontal: '5%',
                   height: 100,
@@ -300,13 +301,16 @@ export default function Global({navigation, route}) {
             }
             style={{zIndex: -1, marginTop: 10}}
             keyExtractor={(i) => i}
-            renderItem={({item}) => (
-              <View style={{width: '44%', marginLeft: 15, marginBottom: 30}}>
+            contentContainerStyle={{paddingBottom: 50}}
+            renderItem={({item, index}) => (
+              <View style={{width: '44%', marginLeft: 15, marginBottom: 10}}>
                 <TouchableOpacity
                   style={{
                     width: '100%',
-                    height: Math.floor((Math.random() * 300) + 120),
+                    height: index % 4 == 0 || index % 4 == 3 ? 300 : 200,
+                    marginTop: (index % 4 == 3) ? -100 : 0,
                     borderRadius: 20,
+                    
                   }}
                   onPress={() => {
                     storage()
@@ -335,7 +339,6 @@ export default function Global({navigation, route}) {
                         start();
                       });
                   }}>
-                    {console.log(item)}
                   <ImageBackground
                     source={{uri: item.userPic}}
                     style={{

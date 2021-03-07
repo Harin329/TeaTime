@@ -23,6 +23,7 @@ export default function Home({navigation}) {
   const [profPic, setProfPic] = useState();
   const [today, setToday] = useState([]);
   const [chat, setChat] = useState([]);
+  const [name, setName] = useState(auth().currentUser.displayName)
 
   const firstOpacity = useRef(new Animated.Value(1)).current;
   const secondOpacity = useRef(new Animated.Value(0)).current;
@@ -126,6 +127,7 @@ export default function Home({navigation}) {
       const url = await pic.getDownloadURL();
       setProfPic(url);
     }
+    setName(auth().currentUser.displayName)
   };
 
   const getNews = async () => {
@@ -225,7 +227,7 @@ export default function Home({navigation}) {
               fontSize: 16,
               textTransform: 'capitalize',
             }}>
-            Hello {auth().currentUser.displayName},
+            Hello {name},
           </Text>
           <Text
             style={{

@@ -35,11 +35,14 @@ export default function Chat({navigation, route}) {
   const [recorded, setRecorded] = useState([]);
   const [recording, setRecording] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     getUserPic();
     getNews();
     checkTopicSelected();
+    getUsernames();
+    
 
     const messagesListener = firestore()
       .collection('Chats')
@@ -71,6 +74,16 @@ export default function Chat({navigation, route}) {
 
     return () => messagesListener();
   }, []);
+
+  const getUsernames = async () => {
+    chatItem.Users.forEach(async (user) => {
+      firestore().collection('Users').doc(user).get().then((doc) =>  {
+        if (!users.some((item) => doc.get('Username') === item.name)) {
+          setUsers((prev) => [...prev, {name: doc.get('Username'), id: doc.id}]);
+        }
+      });
+    });
+  }
 
   const getNews = async () => {
     setToday([]);
@@ -173,6 +186,14 @@ export default function Chat({navigation, route}) {
   function handleSend(newMessage = []) {
     setMessages(GiftedChat.append(messages, newMessage));
 
+    users.forEach((hashtag) => {
+      if (newMessage[0].text.includes('#'+hashtag.name)) {
+        firestore().collection('Recordings').doc(hashtag.id + '_' + topic.ID).set({
+          'Global': true
+        }, {merge: true})
+      }
+    })
+
     firestore()
       .collection('Chats')
       .doc(chatItem.ID)
@@ -244,12 +265,12 @@ export default function Chat({navigation, route}) {
           }}>
           <Text
             style={{
-              fontFamily: 'Montserrat-Bold',
+              fontFamily: 'Montserrat-Medium',
               fontSize: 16,
               color: color.gray,
               alignSelf: 'center',
               flex: 2,
-              marginHorizontal: 20,
+              marginHorizontal: 10,
               textAlign: 'center',
               textAlignVertical: 'center',
             }}>
@@ -344,7 +365,7 @@ export default function Chat({navigation, route}) {
       .ref('Recording')
       .child(auth().currentUser.uid + '_' + topicID + '.mp3')
       .putFile(res);
-    await firestore().collection('TOTD').add({
+    await firestore().collection('TOTD').doc(topicID + '_' + chatItem.ID).set({
       Date: new Date().toDateString(),
       GroupID: chatItem.ID,
       TopicID: topicID,
