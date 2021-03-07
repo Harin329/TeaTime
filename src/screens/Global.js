@@ -24,7 +24,7 @@ export default function Global({navigation, route}) {
   const [profPic, setProfPic] = useState();
   const [recordings, setRecordings] = useState([]);
   const [search, setSearch] = useState([]);
-  const [language, setLanguage] = useState();
+  const [language, setLanguage] = useState('English');
 
   const styles = StyleSheet.create({
     safeView: {flex: 1, backgroundColor: color.blue},
@@ -53,6 +53,7 @@ export default function Global({navigation, route}) {
       .collection('Recordings')
       .where('Global', '==', true)
       .where('TopicID', '==', topic.ID)
+      // .where('Language', '==', language)
       .orderBy('Timestamp', 'desc')
       .get()
       .then((resDocs) => {
@@ -105,6 +106,7 @@ export default function Global({navigation, route}) {
 
   const changeLanguage = (language) => {
     setLanguage(language);
+    getVoices();
   };
 
   const getProfilePic = async () => {

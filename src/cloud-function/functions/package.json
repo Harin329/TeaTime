@@ -17,7 +17,8 @@
     "@google-cloud/speech": "^4.2.0",
     "@google-cloud/storage": "^5.8.1",
     "firebase-admin": "^9.2.0",
-    "firebase-functions": "^3.11.0"
+    "firebase-functions": "^3.11.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.15.1"
   },
   "devDependencies": {
     "eslint": "^7.6.0",
