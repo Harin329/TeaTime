@@ -251,7 +251,9 @@ export default function Home({navigation}) {
             backgroundColor: '#0000',
           }}
           onPress={() => {
-            navigation.push('Profile');
+            navigation.push('Profile', {
+              UserID: auth().currentUser.uid
+            });
           }}>
           <Image source={{uri: profPic}} style={styles.profile} />
         </TouchableOpacity>
@@ -260,7 +262,11 @@ export default function Home({navigation}) {
         data={today}
         horizontal={true}
         renderItem={({item}) => (
-          <TouchableOpacity style={styles.imageCard}>
+          <TouchableOpacity style={styles.imageCard} onPress={() => {
+            navigation.push('Global', {
+              TopicID: item.ID
+            })
+          }}>
             <ImageBackground
               source={{uri: item.image}}
               style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
@@ -362,7 +368,9 @@ export default function Home({navigation}) {
                   backgroundColor: '#0000',
                 }}
                 onPress={() => {
-                  navigation.push('Profile');
+                  navigation.push('Profile', {
+                    UserID: auth().currentUser.uid
+                  });
                 }}>
                 <Image source={{uri: profPic}} style={styles.profile} />
               </TouchableOpacity>

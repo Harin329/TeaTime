@@ -144,7 +144,6 @@ export default function Chat({navigation, route}) {
       .where('UserID', 'in', chatItem.Users)
       .onSnapshot((resDocs) => {
         if (!resDocs.empty) {
-          recVar = []
           resDocs.forEach((doc) => {
             (async () => {
             try {
@@ -314,7 +313,7 @@ export default function Chat({navigation, route}) {
                 marginRight: 5,
               }}>
               <Image
-                source={{uri: profPic}}
+                source={{uri: item.url}}
                 style={{
                   width: '100%',
                   height: '100%',

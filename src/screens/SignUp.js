@@ -78,11 +78,11 @@ export default function SignUp({navigation}) {
               result.user.updateProfile({
                 displayName: usernameLower,
               });
-              
+
               firestore().collection('Users').doc(result.user.uid).set({
                 UID: result.user.uid,
                 Username: usernameLower,
-                Bio: 'Hey, Welcome to My TeaTime Profile!',
+                Bio: 'Hey, Welcome to my TeaTime Profile!',
                 ProfPic:
                   'gs://sfhacks2021.appspot.com/ProfilePicture/DefaultProfPic.png',
                 Following: 0,
