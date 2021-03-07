@@ -12,18 +12,24 @@ import {
   FlatList,
   Animated,
   ImageBackground,
+  TextInput,
 } from 'react-native';
 import BottomSheet, {BottomSheetFlatList} from '@gorhom/bottom-sheet';
 import color from '../styles/color';
 import moment from 'moment';
 import ActionButton from 'react-native-action-button';
+import {BlurView} from '@react-native-community/blur';
 // import getHeadline from '../cloud-function/getDailyNews';
 
 export default function Home({navigation}) {
   const [profPic, setProfPic] = useState();
   const [today, setToday] = useState([]);
   const [chat, setChat] = useState([]);
-  const [name, setName] = useState(auth().currentUser.displayName)
+  const [name, setName] = useState(auth().currentUser.displayName);
+  const [join, setJoin] = useState(false);
+  const [groupCode, setCode] = useState('');
+  const [add, setAdd] = useState(false);
+  const [groupName, setGroupName] = useState('');
 
   const firstOpacity = useRef(new Animated.Value(1)).current;
   const secondOpacity = useRef(new Animated.Value(0)).current;
@@ -127,17 +133,29 @@ export default function Home({navigation}) {
       const url = await pic.getDownloadURL();
       setProfPic(url);
     }
-    setName(auth().currentUser.displayName)
+    setName(auth().currentUser.displayName);
   };
 
   const getNews = async () => {
-    console.log(new Date().toDateString())
+    console.log(new Date().toDateString());
     setToday([]);
-    await firestore().collection('Topics').where('Date', '==', new Date().toDateString()).get().then((resDocs) => {
-      resDocs.forEach((doc) => {
-        setToday((prev) => [...prev, {image: doc.get('PhotoURL'), title: doc.get('Title'), url: doc.get('URL'), ID: doc.id}])
-      })
-    })
+    await firestore()
+      .collection('Topics')
+      .where('Date', '==', new Date().toDateString())
+      .get()
+      .then((resDocs) => {
+        resDocs.forEach((doc) => {
+          setToday((prev) => [
+            ...prev,
+            {
+              image: doc.get('PhotoURL'),
+              title: doc.get('Title'),
+              url: doc.get('URL'),
+              ID: doc.id,
+            },
+          ]);
+        });
+      });
   };
 
   const getChat = async () => {
@@ -150,7 +168,9 @@ export default function Home({navigation}) {
         resDocs.forEach((doc) => {
           (async () => {
             try {
-              const url = await storage().refFromURL(doc.get('Picture')).getDownloadURL();
+              const url = await storage()
+                .refFromURL(doc.get('Picture'))
+                .getDownloadURL();
               let data = doc.data();
               data.url = url;
               if (!chat.some((item) => item.ID === data.ID)) {
@@ -254,7 +274,7 @@ export default function Home({navigation}) {
           }}
           onPress={() => {
             navigation.push('Profile', {
-              UserID: auth().currentUser.uid
+              UserID: auth().currentUser.uid,
             });
           }}>
           <Image source={{uri: profPic}} style={styles.profile} />
@@ -264,11 +284,13 @@ export default function Home({navigation}) {
         data={today}
         horizontal={true}
         renderItem={({item}) => (
-          <TouchableOpacity style={styles.imageCard} onPress={() => {
-            navigation.push('Global', {
-              Topic: item
-            })
-          }}>
+          <TouchableOpacity
+            style={styles.imageCard}
+            onPress={() => {
+              navigation.push('Global', {
+                Topic: item,
+              });
+            }}>
             <ImageBackground
               source={{uri: item.image}}
               style={[styles.imageStyle, {justifyContent: 'flex-end'}]}
@@ -371,18 +393,20 @@ export default function Home({navigation}) {
                 }}
                 onPress={() => {
                   navigation.push('Profile', {
-                    UserID: auth().currentUser.uid
+                    UserID: auth().currentUser.uid,
                   });
                 }}>
                 <Image source={{uri: profPic}} style={styles.profile} />
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
-          <ActionButton buttonColor={color.lightBlue} style={{zIndex: 8, bottom: 20, }}>
+          <ActionButton
+            buttonColor={color.lightBlue}
+            style={{zIndex: 8, bottom: 20}}>
             <ActionButton.Item
               buttonColor={color.white}
               title="Join Group"
-              onPress={() => console.log('notes tapped!')}>
+              onPress={() => setJoin(true)}>
               <Image
                 source={require('../assets/Plus.png')}
                 style={{
@@ -395,7 +419,9 @@ export default function Home({navigation}) {
             <ActionButton.Item
               buttonColor={color.white}
               title="Create Group"
-              onPress={() => {}}>
+              onPress={() => {
+                setAdd(true);
+              }}>
               <Image
                 source={require('../assets/Plus.png')}
                 style={{
@@ -406,6 +432,212 @@ export default function Home({navigation}) {
               />
             </ActionButton.Item>
           </ActionButton>
+          {join && (
+            <BlurView
+              blurAmount={10}
+              blurType="light"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+                zIndex: 20,
+              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setJoin(false);
+                }}
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  height: '100%',
+                }}></TouchableOpacity>
+              <View
+                style={{
+                  backgroundColor: color.white,
+                  width: '80%',
+                  height: '30%',
+                  borderRadius: 20,
+                  zIndex: 30,
+                  position: 'absolute',
+                  top: 200,
+                  left: 40,
+                  bottom: 0,
+                  right: 0,
+                  zIndex: 20,
+                  alignItems: 'center',
+                }}>
+                <Text
+                  style={{
+                    fontFamily: 'Montserrat-Bold',
+                    color: color.gray,
+                    fontSize: 20,
+                    marginTop: 30,
+                  }}>
+                  Join a group
+                </Text>
+                <TextInput
+                  placeholder="Enter group code"
+                  onChangeText={(text) => setCode(text)}
+                  placeholderTextColor={color.gray}
+                  value={groupCode}
+                  style={{
+                    paddingVertical: 10,
+                    marginVertical: 30,
+                    marginBottom: 70,
+                    width: '80%',
+                    fontFamily: 'Montserrat',
+                    borderBottomWidth: 1,
+                    borderBottomColor: color.gray,
+                    color: color.black,
+                  }}
+                />
+                <View
+                  style={{
+                    width: '100%',
+                    height: 1,
+                    backgroundColor: color.gray,
+                  }}></View>
+                <TouchableOpacity
+                  style={{width: '100%', alignItems: 'center'}}
+                  onPress={async () => {
+                    firestore()
+                      .collection('Chats')
+                      .where('Code', '==', groupCode)
+                      .get()
+                      .then((resDoc) => {
+                        resDoc.forEach((doc) => {
+                          if (doc.exists) {
+                            doc.ref
+                              .update({
+                                Users: firestore.FieldValue.arrayUnion(
+                                  auth().currentUser.uid,
+                                ),
+                              })
+                              .then(() => {
+                                setJoin(false);
+                                getChat();
+                              });
+                          }
+                        });
+                      });
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Bold',
+                      color: color.gray,
+                      fontSize: 20,
+                      marginTop: 10,
+                    }}>
+                    Join
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          )}
+          {add && (
+            <BlurView
+              blurAmount={10}
+              blurType="light"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+                zIndex: 20,
+              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setAdd(false);
+                }}
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  height: '100%',
+                }}></TouchableOpacity>
+              <View
+                style={{
+                  backgroundColor: color.white,
+                  width: '80%',
+                  height: '30%',
+                  borderRadius: 20,
+                  zIndex: 30,
+                  position: 'absolute',
+                  top: 200,
+                  left: 40,
+                  bottom: 0,
+                  right: 0,
+                  zIndex: 20,
+                  alignItems: 'center',
+                }}>
+                <Text
+                  style={{
+                    fontFamily: 'Montserrat-Bold',
+                    color: color.gray,
+                    fontSize: 20,
+                    marginTop: 30,
+                  }}>
+                  Create a group
+                </Text>
+                <TextInput
+                  placeholder="Enter group name"
+                  onChangeText={(text) => setGroupName(text)}
+                  placeholderTextColor={color.gray}
+                  value={groupName}
+                  style={{
+                    paddingVertical: 10,
+                    marginVertical: 30,
+                    marginBottom: 70,
+                    width: '80%',
+                    fontFamily: 'Montserrat',
+                    borderBottomWidth: 1,
+                    borderBottomColor: color.gray,
+                    color: color.black,
+                  }}
+                />
+                <View
+                  style={{
+                    width: '100%',
+                    height: 1,
+                    backgroundColor: color.gray,
+                  }}></View>
+                <TouchableOpacity
+                  style={{width: '100%', alignItems: 'center'}}
+                  onPress={async () => {
+                    firestore()
+                      .collection('Chats')
+                      .add({
+                        LastActive: firestore.FieldValue.serverTimestamp(),
+                        Name: groupName,
+                        Picture: '',
+                        Users: [auth().currentUser.uid]
+                      }).then((res) => {
+                        res.set({
+                          ID: res.id,
+                          Code: res.id.toString().substring(0, 5)
+                        }, {merge: true}).then(() => {
+                          setAdd(false);
+                          getChat();
+                        })
+                      })
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Bold',
+                      color: color.gray,
+                      fontSize: 20,
+                      marginTop: 10,
+                    }}>
+                    Create
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          )}
           <BottomSheetFlatList
             data={[...new Set(chat)]}
             scrollEnabled={true}

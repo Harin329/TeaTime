@@ -1,0 +1,69 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "Chats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Users",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "LastActive",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "Recordings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Global",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "TopicID",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "Recordings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Global",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "UserID",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "TOTD",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "GroupID",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Date",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

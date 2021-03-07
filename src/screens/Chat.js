@@ -22,6 +22,7 @@ import {
 } from 'react-native-gifted-chat';
 import TrackPlayer, {STATE_PLAYING} from 'react-native-track-player';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import AlertMe from '../components/Alert';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
@@ -429,7 +430,9 @@ export default function Chat({navigation, route}) {
           }}>
           {chatItem.Name}
         </Text>
-        <TouchableOpacity style={{flex: 0.5}} onPress={() => {}}>
+        <TouchableOpacity style={{flex: 0.5}} onPress={() => {
+          AlertMe('Group Code is: ' + chatItem.Code, '', null);
+        }}>
           <Image
             source={require('../assets/More.png')}
             style={{
