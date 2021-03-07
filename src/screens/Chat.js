@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
+import React, {useState, useEffect} from 'react';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import storage from '@react-native-firebase/storage';
@@ -9,14 +9,10 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StyleSheet,
-  Button,
   ImageBackground,
   FlatList,
-  TextInput,
-  Animated,
   Linking,
 } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
 import color from '../styles/color';
 import {
   GiftedChat,
@@ -35,7 +31,8 @@ export default function Chat({navigation, route}) {
   const [profPic, setProfPic] = useState();
 
   const [topic, setTopic] = useState();
-  const [recorded, setRecorded] = useState([1, 2, 3]);
+  const [myRecording, setMyRecording] = useState(false);
+  const [recorded, setRecorded] = useState([]);
   const [recording, setRecording] = useState(false);
   const [messages, setMessages] = useState([]);
 
@@ -97,12 +94,11 @@ export default function Chat({navigation, route}) {
   };
 
   const checkTopicSelected = async () => {
-    await firestore()
+    const topicListener = firestore()
       .collection('TOTD')
       .where('Date', '==', new Date().toDateString())
       .where('GroupID', '==', chatItem.ID)
-      .get()
-      .then((resDocs) => {
+      .onSnapshot((resDocs) => {
         if (!resDocs.empty) {
           let tID = resDocs.docs[0].get('TopicID');
           firestore()
@@ -111,11 +107,68 @@ export default function Chat({navigation, route}) {
             .get()
             .then((doc) => {
               if (doc.exists) {
-                setTopic(doc.data());
+                setTopic({...doc.data(), ID: tID});
+                getUserVoices(tID);
               }
+
+              firestore()
+                .collection('Recordings')
+                .doc(auth().currentUser.uid + '_' + tID)
+                .get()
+                .then((recDoc) => {
+                  if (!recDoc.exists) {
+                    setToday([
+                      {
+                        image: doc.get('PhotoURL'),
+                        title: doc.get('Title'),
+                        url: doc.get('URL'),
+                        ID: doc.id,
+                      },
+                    ]);
+                    setMyRecording(false);
+                  } else {
+                    setMyRecording(true);
+                  }
+                });
             });
         }
       });
+    return () => topicListener();
+  };
+
+  var recVar = []
+  const getUserVoices = async (TOPIC_ID) => {
+    const voiceListener = firestore()
+      .collection('Recordings')
+      .where('TopicID', '==', TOPIC_ID)
+      .where('UserID', 'in', chatItem.Users)
+      .onSnapshot((resDocs) => {
+        if (!resDocs.empty) {
+          recVar = []
+          resDocs.forEach((doc) => {
+            (async () => {
+            try {
+              const pic = storage()
+                .ref('ProfilePicture')
+                .child(`${doc.get('UserID')}.jpg`);
+              const url = await pic.getDownloadURL();
+              if (!recVar.some((item) => item.UserID === doc.data().UserID)) {
+                recVar.push({...doc.data(), url})
+                setRecorded((prev) => [...prev, {...doc.data(), url}]);
+              }
+            } catch (e) {
+              const pic = storage().ref('DefaultProfPic.png');
+              const url = await pic.getDownloadURL();
+              if (!recVar.some((item) => item.UserID === doc.data().UserID)) {
+                recVar.push({...doc.data(), url})
+                setRecorded((prev) => [...prev, {...doc.data(), url}]);
+              }
+            }
+          })();
+          });
+        }
+      });
+    return () => voiceListener();
   };
 
   function handleSend(newMessage = []) {
@@ -156,7 +209,7 @@ export default function Chat({navigation, route}) {
       width: 50,
       height: 50,
       borderRadius: 50,
-      resizeMode: 'contain',
+      resizeMode: 'cover',
       backgroundColor: color.blue,
     },
     imageCard: {
@@ -222,7 +275,7 @@ export default function Chat({navigation, route}) {
           </View>
         </TouchableOpacity>
         <FlatList
-          data={recorded}
+          data={[...new Set(recorded)]}
           horizontal={true}
           style={{marginHorizontal: '5%', marginTop: 10}}
           renderItem={({item}) => (
@@ -230,7 +283,7 @@ export default function Chat({navigation, route}) {
               onPress={() => {
                 storage()
                   .ref('Recording')
-                  .child('Testing.mp3')
+                  .child(item.UserID + '_' + item.TopicID + '.mp3')
                   .getDownloadURL()
                   .then((res) => {
                     console.log(res);
@@ -243,7 +296,7 @@ export default function Chat({navigation, route}) {
                         await TrackPlayer.stop();
                       } else {
                         await TrackPlayer.add({
-                          id: '1',
+                          id: item.UserID,
                           url: res,
                           title: '',
                           artist: '',
@@ -258,9 +311,17 @@ export default function Chat({navigation, route}) {
                 width: 70,
                 height: 70,
                 borderRadius: 70,
-                backgroundColor: 'green',
                 marginRight: 5,
-              }}></TouchableOpacity>
+              }}>
+              <Image
+                source={{uri: profPic}}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  resizeMode: 'cover',
+                  borderRadius: 70,
+                }}></Image>
+            </TouchableOpacity>
           )}
         />
       </View>
@@ -275,12 +336,28 @@ export default function Chat({navigation, route}) {
     });
   };
 
-  const stopRecording = async (audioRecorderPlayer) => {
+  const stopRecording = async (audioRecorderPlayer, topicID) => {
     setRecording(false);
     const res = await audioRecorderPlayer.stopRecorder();
     audioRecorderPlayer.removeRecordBackListener();
     console.log(res);
-    await storage().ref('Recording').child('Testing.mp3').putFile(res);
+    await storage()
+      .ref('Recording')
+      .child(auth().currentUser.uid + '_' + topicID + '.mp3')
+      .putFile(res);
+    await firestore().collection('TOTD').add({
+      Date: new Date().toDateString(),
+      GroupID: chatItem.ID,
+      TopicID: topicID,
+    });
+    await firestore()
+      .collection('Recordings')
+      .doc(auth().currentUser.uid + '_' + topicID)
+      .set({
+        TopicID: topicID,
+        UserID: auth().currentUser.uid,
+        Timestamp: firestore.FieldValue.serverTimestamp(),
+      });
   };
 
   return (
@@ -345,8 +422,8 @@ export default function Chat({navigation, route}) {
           />
         </TouchableOpacity>
       </View>
-      {topic && otherVoices()}
-      {topic && (
+      {topic && myRecording && otherVoices()}
+      {topic && myRecording && (
         <View
           style={{
             width: '100%',
@@ -419,7 +496,7 @@ export default function Chat({navigation, route}) {
           </ImageBackground>
         </View>
       )}
-      {!topic && (
+      {!myRecording && (
         <View
           style={{
             width: '100%',
@@ -441,7 +518,9 @@ export default function Chat({navigation, route}) {
                 margin: 20,
                 fontSize: 22,
               }}>
-              Choose a topic.
+              {topic !== undefined
+                ? 'The topic for today is:'
+                : 'Choose a topic.'}
             </Text>
             <FlatList
               data={today}
@@ -480,7 +559,7 @@ export default function Chat({navigation, route}) {
                     style={{alignSelf: 'center', marginTop: 80}}
                     onPress={() => {
                       if (recording) {
-                        stopRecording(audioRecorderPlayer);
+                        stopRecording(audioRecorderPlayer, item.ID);
                       } else {
                         startRecording(audioRecorderPlayer);
                       }
@@ -505,6 +584,7 @@ export default function Chat({navigation, route}) {
                 height: '60%',
                 marginHorizontal: '8%',
                 marginTop: 10,
+                paddingRight: 50,
               }}
             />
           </ImageBackground>

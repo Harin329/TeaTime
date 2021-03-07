@@ -148,7 +148,7 @@ export default function Home({navigation}) {
         resDocs.forEach((doc) => {
           (async () => {
             try {
-              const url = await doc.get('Picture').getDownloadURL();
+              const url = await storage().refFromURL(doc.get('Picture')).getDownloadURL();
               let data = doc.data();
               data.url = url;
               if (!chat.some((item) => item.ID === data.ID)) {
@@ -182,7 +182,7 @@ export default function Home({navigation}) {
         flexDirection: 'row',
         alignItems: 'center',
       }}>
-      <Image source={{uri: profPic}} style={[styles.profile]} />
+      <Image source={{uri: item.url}} style={[styles.profile]} />
       <Text
         style={{
           flex: 3,
