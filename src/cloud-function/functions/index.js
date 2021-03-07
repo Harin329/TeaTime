@@ -20,12 +20,14 @@ exports.detectLanguage = functions.storage
       // const bucket = storage.bucket(object.bucket);
       // const file = bucket.file(object.name);
 
-      const uri = "https://firebasestorage.googleapis.com/v0/b/sfhacks2021.appspot.com/o/Recording%2FFM9mCxpIL0PYJ0Vw41tsHbjfNv12_PiIfuoPZ6zv482Rsysxc.mp3?alt=media&token=f2d59da8-bdc7-4ed1-888b-8a983558f7dc"; // gs://${bucket.name}/${file.name}
+      const uri = "gs://sfhacks2021.appspot.com/Recording/air.mp3"; // gs://${bucket.name}/${file.name}
 
       const config = {
         encoding: "LINEAR16",
-        sampleRateHertz: 44100,
+        sampleRateHertz: 8000,
         languageCode: "en-US",
+        enableAutomaticPunctuation: "true",
+        model: "default",
         alternativeLanguageCodes: ["es-ES", "en-US", "en-CA", "fr-CA", "en-GB"],
       };
 
@@ -45,6 +47,8 @@ exports.detectLanguage = functions.storage
           .map((result) => result.alternatives[0].transcript)
           .join("\n");
       console.log(`Transcription: ${transcription}`);
+      console.log(`Words: ${response.results.toString()}`);
+
 
       //   admin.firestore().collection("Recordings").add({
       //     doc: transcription,

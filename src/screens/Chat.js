@@ -307,6 +307,7 @@ export default function Chat({navigation, route}) {
                   .child(item.UserID + '_' + item.TopicID + '.mp3')
                   .getDownloadURL()
                   .then((res) => {
+                    console.log('here')
                     console.log(res);
                     const start = async () => {
                       await TrackPlayer.setupPlayer();
@@ -365,12 +366,12 @@ export default function Chat({navigation, route}) {
     await storage()
       .ref('Recording')
       .child(auth().currentUser.uid + '_' + topicID + '.mp3')
-      .putFile(res);
+      .putFile(res).catch(e => console.log(e));
     await firestore().collection('TOTD').doc(topicID + '_' + chatItem.ID).set({
       Date: new Date().toDateString(),
       GroupID: chatItem.ID,
       TopicID: topicID,
-    });
+    }).catch(e => console.log(e));
     await firestore()
       .collection('Recordings')
       .doc(auth().currentUser.uid + '_' + topicID)
@@ -378,7 +379,8 @@ export default function Chat({navigation, route}) {
         TopicID: topicID,
         UserID: auth().currentUser.uid,
         Timestamp: firestore.FieldValue.serverTimestamp(),
-      });
+      }).catch(e => console.log(e));
+    setMyRecording(true);
   };
 
   return (
