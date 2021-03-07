@@ -437,30 +437,31 @@ export default function Home({navigation}) {
             style={{zIndex: 8, bottom: 20}}>
             <ActionButton.Item
               buttonColor={color.white}
-              title="Join Group"
+              title=""
               textStyle={{fontFamily: 'Montserrat'}}
               onPress={() => setJoin(true)}>
               <Image
-                source={require('../assets/Plus.png')}
+                source={require('../assets/Join.png')}
                 style={{
-                  width: 50,
-                  height: 50,
+                  width: 30,
+                  height: 30,
                   resizeMode: 'contain',
+                  tintColor: color.blue
                 }}
               />
             </ActionButton.Item>
             <ActionButton.Item
               buttonColor={color.white}
-              title="Create Group"
+              title=""
               textStyle={{fontFamily: 'Montserrat'}}
               onPress={() => {
                 setAdd(true);
               }}>
               <Image
-                source={require('../assets/Plus.png')}
+                source={require('../assets/Create.png')}
                 style={{
-                  width: 50,
-                  height: 50,
+                  width: 30,
+                  height: 30,
                   resizeMode: 'contain',
                 }}
               />
